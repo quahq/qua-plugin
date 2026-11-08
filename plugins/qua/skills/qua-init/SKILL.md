@@ -7,7 +7,7 @@ description: Set up Qua for this project (app URL, stages, integrations by categ
 
 Set up the project data Qua needs. Follow the steps in order and do not skip ahead.
 
-This plugin was built for qua v1.3.0.
+This plugin was built for qua v1.4.0.
 
 ## Rules
 

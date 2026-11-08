@@ -29,3 +29,4 @@ Run saved suites and summarize. The text after the command is an optional stage 
    - For each `review` case: the step and its `candidates` (`map_id`, role, name). Do not pick a candidate yourself.
    - The log paths under `.qua/runs/` when the results give them. For a step's Jev judgments call `qua_run_get(id)` with an id from `qua_run_list(suite)`.
    - Totals: passed, failed, review.
+5. When the host renders widgets, show the runs with `qua_runs_view(suite?)`. In Cursor's Agents Window ask whether the user sees a widget; if not, keep the text summary. Never call `qua_review_answer` or `qua_shot_get`.

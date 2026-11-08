@@ -28,11 +28,14 @@ Change project data only with `qua_project_set`; never edit `.qua/project.yaml`.
 - `qua_run(suite, session, case?, browser?, stage?)` — run a saved case, or every case in a suite.
 - `qua_explore(session, start?, stage?, max_steps?, max_depth?, max_minutes?, origins?, allow_submit?, browser?)` — walk links, buttons and tabs within limits, grow the UI map, return a report; never `allow_submit` without the user's yes.
 - `qua_review_pick(session, timeout_s?)` — after a `review` step whose result says `review: shown in the window`, wait for the user's pick in the overlay; returns a `map_id` to pass as `target`.
-- `qua_record(action, session?, case?)` — `start`, `stop` or `status` of a recording of the user's manual actions in a session window; with `case` the steps are appended to that case on stop.
+- `qua_review_view(session)` — widget for a shown review: the user picks a candidate in it. Call it only when the host renders widgets.
+- `qua_runs_view(id?, suite?)`, `qua_map_view(page?, fp?, tab?)`, `qua_cases_view(suite?, name?)` — widgets showing runs, the UI map and saved cases. Call them to show results when widgets render; the text tools stay the source of truth.
+- `qua_record(action, session?, case?)` — `start`, `stop` or `status` of a recording of the user's manual actions in a session window; with `case` the steps are appended to that case on stop. `learn_start`, `observe` and `learn_stop` learn the map passively while the user browses, without case steps; only pages on the app URL or a stage are mapped.
 - `qua_case_write(suite, name, steps)` — save `.qua/{suite}/{name}.md`.
 - `qua_case_list(suite?)`, `qua_case_get(suite, name)` — read saved cases as JSON.
+- `qua_case_resolved(suite, case)` — a case's resolved-step lock (`.qua/resolved/`) as JSON: per line `resolved`, `stale` and the locked action and target.
 - `qua_run_list(suite?, status?, limit?, cursor?)`, `qua_run_get(id)` — past case runs as JSON, newest first; `qua_run_get` has each step's status, Jev judgments and screenshots.
-- `qua_map_get(page?, session?)`, `qua_map_state(fp)` — the UI map as JSON: without `page` a page summary, with it the page's states and edges.
+- `qua_map_get(page?, session?)`, `qua_map_state(fp)` — the UI map as JSON: without `page` a page summary, with it the page's states and edges. On a stale map it fails with an error to delete `.qua/map` and learn again: tell the user, do not delete it yourself.
 - `qua_session_list()` — list existing sessions.
 - `qua_session_logs(session, tail?, kind?)` — console, page errors, failed requests and Qua errors of a session window (`kind`: console, error, network, all).
 - `qua_session_screenshot(session, full_page?, label?)` — capture the session window now; returns the saved path (`.qua/screenshots/<session>/`) and the image. Cursor tabs need the Agents Window visible (not minimized).
@@ -104,8 +107,11 @@ Each step returns `status`, `reason` and `prose`.
   2. Otherwise rephrase the step to name the element more precisely and
      retry once, or show the candidates to the user and ask which one.
   Never pick a candidate just because it has the highest score.
-  3. If the result says `review: shown in the window` and the user is
-     watching it, ask them to pick there and call `qua_review_pick` with the
+  3. If the result says `review: shown in the window`, call `qua_review_view`
+     when the host renders widgets. In Cursor's Agents Window widgets do not
+     render: ask the user whether they see one, else use the text flow. Never call
+     `qua_review_answer` or `qua_shot_get`; they are widget-only. If the user is
+     watching the window, ask them to pick there and call `qua_review_pick` with the
      session (default wait 60 s); on `picked: <map_id>` re-issue `qua_do` with
      that `target`. On a cancel or a timeout, fall back to step 1 or 2.
 - In a `qua_run`, a `review` step stops that case; later cases still run. Report
