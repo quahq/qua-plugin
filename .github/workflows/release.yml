@@ -1,0 +1,109 @@
+name: Release
+
+# Copies dev onto main at a stable qua release and tags it (ADR 0010, 0054).
+# qua-cli sends repository_dispatch "qua-release" after stable binaries are published.
+on:
+  repository_dispatch:
+    types: [qua-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: stable qua release tag, e.g. v1.5.0
+        required: true
+      core:
+        description: qua-core version in qua-cli go.mod at that tag, e.g. v0.3.0
+        required: true
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  CLAUDE_CODE: "2.1.318"
+  OLD_CLAUDE_CODE: "2.1.286"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve inputs
+        id: in
+        env:
+          VERSION: ${{ github.event.client_payload.version || inputs.version }}
+          CORE: ${{ github.event.client_payload.core || inputs.core }}
+          RELEASE_TOKEN: ${{ secrets.QUA_PLUGIN_TOKEN }}
+        run: |
+          semver='^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
+          [[ "$VERSION" =~ $semver ]] || { echo "::error::bad version '$VERSION'"; exit 1; }
+          [[ "$CORE" =~ $semver ]] || { echo "::error::bad core '$CORE'"; exit 1; }
+          if [[ "$VERSION" == *-dev* ]]; then
+            echo "::error::$VERSION is a -dev tag; dev releases do not touch qua-plugin (dev moves by merges)"
+            exit 1
+          fi
+          if [ -z "$RELEASE_TOKEN" ]; then
+            echo "::error::org secret QUA_PLUGIN_TOKEN is not available (needs Contents and Workflows write on this repo)"
+            exit 1
+          fi
+          { echo "version=$VERSION"; echo "core=$CORE"; } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Take the dev tree
+        run: |
+          git fetch -q origin dev
+          git rm -rq .
+          git checkout origin/dev -- .
+
+      - name: Contract matches the release
+        env:
+          VERSION: ${{ steps.in.outputs.version }}
+          CORE: ${{ steps.in.outputs.core }}
+        run: |
+          got="$(cut -d' ' -f2 contract/SOURCE)"
+          [ "$got" = "$CORE" ] && exit 0
+          echo "::error::contract/SOURCE is qua-core $got, qua $VERSION ships $CORE; vendor contract/tools.json from $CORE in a PR to dev"
+          exit 1
+
+      - name: Set version
+        run: scripts/set-version.sh "${{ steps.in.outputs.version }}"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Checks
+        run: |
+          node --test tests/*.test.mjs
+          npm install -g "@anthropic-ai/claude-code@$CLAUDE_CODE"
+          claude plugin validate --strict .
+          claude plugin test plugins/qua
+          scripts/check-old-host.sh npx -y "@anthropic-ai/claude-code@$OLD_CLAUDE_CODE"
+
+      - name: Commit, tag, push
+        env:
+          VERSION: ${{ steps.in.outputs.version }}
+          TOKEN: ${{ secrets.QUA_PLUGIN_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -q -m "qua $VERSION"
+          git fetch -q --tags origin
+          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+            if [ "$(git rev-parse "$VERSION^{tree}")" = "$(git rev-parse HEAD^{tree})" ]; then
+              echo "tag $VERSION exists with the same content; nothing to do"
+              exit 0
+            fi
+            echo "::error::tag $VERSION exists with different content ($(git rev-parse "$VERSION^{commit}")); something else tagged this repo, e.g. qua-cli release-plugin.yml. Delete the tag after checking it, then rerun."
+            exit 1
+          fi
+          git tag "$VERSION"
+          git push --atomic "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/main" "refs/tags/$VERSION"

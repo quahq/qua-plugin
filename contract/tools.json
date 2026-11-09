@@ -1,0 +1,3517 @@
+{
+  "version": 1,
+  "tools": [
+    {
+      "id": "qua_do",
+      "name": "qua_do",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "action",
+        "session",
+        "agent?",
+        "browser?",
+        "endpoint?",
+        "owner?",
+        "stage?",
+        "target?"
+      ],
+      "args_go": "op.DoInput",
+      "result_go": "op.StepResult",
+      "result": "{status, reason, prose, action?, map_note?, sub?, candidates?, action_candidates?, review_shown?, screenshot?, screenshot_error?, notes?, resolved?}; text: the same as lines; candidates on review; resolved is never set by qua_do (see qua_run)",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": false,
+        "openWorld": true
+      },
+      "ask": "B",
+      "ask_note": "off-origin only",
+      "cli": [
+        "qua do"
+      ],
+      "app": "chat agent calls qua_do",
+      "skill": "qua; /qua-validate",
+      "decision": "Jev: action + target (/v1/resolve); code: pass/review gate",
+      "matrix_row": [
+        "2.11",
+        "3.1"
+      ]
+    },
+    {
+      "id": "qua_run",
+      "name": "qua_run",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "session",
+        "suite",
+        "agent?",
+        "browser?",
+        "case?",
+        "endpoint?",
+        "fresh?",
+        "owner?",
+        "stage?"
+      ],
+      "args_go": "op.RunInput",
+      "result_go": "op.RunResult",
+      "result": "{session, status, cases:[{suite, case, status, steps, duration_ms, log?, error?, lock_note?}]}; steps are qua_do step results plus resolved: lock (from .qua/resolved, no /v1/resolve), fresh or relock (the lock entry failed, resolved again); text: per-case status, `resolved: lock|relock` per step; progress notifications per step",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": false,
+        "openWorld": true
+      },
+      "ask": "B",
+      "ask_note": "off-origin only",
+      "cli": [
+        "qua run"
+      ],
+      "app": "Test cases Run (one case)",
+      "skill": "qua; /qua-regress",
+      "decision": "code: a .qua/resolved entry matching step text, stage and map version is performed without /v1/resolve, re-resolved once if it fails (fresh skips it); Jev: other steps as do; code: review stops case; LLM: suite/stage filter",
+      "matrix_row": [
+        "3.3",
+        "3.4"
+      ]
+    },
+    {
+      "id": "qua_explore",
+      "name": "qua_explore",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "session",
+        "agent?",
+        "allow_submit?",
+        "browser?",
+        "endpoint?",
+        "max_depth?",
+        "max_minutes?",
+        "max_steps?",
+        "origins?",
+        "owner?",
+        "stage?",
+        "start?"
+      ],
+      "args_go": "op.ExploreInput",
+      "result_go": "op.ExploreResult",
+      "result": "{stopped, steps, max_steps, pages:[], states, edges:[], destructive?, session_end?, needs_human?, submit?, external?, errors?, depth_cut?, last_state?, notes?}; text: the same report; progress notifications",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": false,
+        "openWorld": true
+      },
+      "ask": "B",
+      "ask_note": "A with allow_submit (0035); B without is inferred",
+      "cli": [
+        "qua explore"
+      ],
+      "app": "UI map Explore",
+      "skill": "/qua-explore",
+      "decision": "Jev: classify, place, risk; code: submit and logout regex; human: allow_submit",
+      "matrix_row": [
+        "4.3"
+      ]
+    },
+    {
+      "id": "qua_review_pick",
+      "name": "qua_review_pick",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "session",
+        "timeout_s?"
+      ],
+      "args_go": "op.ReviewPickInput",
+      "result_go": "op.ReviewPickResult",
+      "result": "{session, picked?, cancelled?, timed_out?, detail}; text: detail (picked map_id | cancelled | timeout)",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua review pick"
+      ],
+      "app": null,
+      "skill": "qua",
+      "decision": "human: picks candidate; LLM: picks if one clearly matches",
+      "matrix_row": [
+        "2.15",
+        "3.2"
+      ]
+    },
+    {
+      "id": "qua_record",
+      "name": "qua_record",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "action",
+        "case?",
+        "session?"
+      ],
+      "args_go": "op.RecordInput",
+      "result_go": "op.RecordResult",
+      "result": "{session?, action, detail}; text: detail, the recording and learn state; case steps on stop. Actions start|stop|status, learn_start|learn_stop|observe (passive map, 0029)",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "ask_note": "inferred, not in 0035",
+      "cli": [
+        "qua record start",
+        "qua record stop",
+        "qua record status",
+        "qua record watch",
+        "qua record learn-start",
+        "qua record learn-stop",
+        "qua record observe"
+      ],
+      "app": "toolbar \"Learn the map while I browse\" (learn_start, learn_stop, observe)",
+      "skill": "/qua-record",
+      "decision": "code: step prose from events, stage-host gate, no-repeat rule; Jev: place, partial classify",
+      "matrix_row": [
+        "4.4"
+      ]
+    },
+    {
+      "id": "qua_init",
+      "name": "qua_init",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "agents?",
+        "no_plugin?"
+      ],
+      "args_go": "op.InitInput",
+      "result_go": "op.InitResult",
+      "result": "{cancelled?, files, config, notes?}; text: initialized paths and config",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": [
+        "qua init"
+      ],
+      "app": "picker Init (qua init --no-plugin)",
+      "skill": "/qua-init",
+      "decision": "human: consent",
+      "matrix_row": [
+        "1.3"
+      ]
+    },
+    {
+      "id": "qua_case_write",
+      "name": "qua_case_write",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "name",
+        "steps",
+        "suite"
+      ],
+      "args_go": "op.CaseWriteInput",
+      "result_go": "op.CaseWriteResult",
+      "result": "{path}; text: the case file",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "B",
+      "ask_note": "inferred, not in 0035",
+      "cli": [
+        "qua case write"
+      ],
+      "app": null,
+      "skill": "qua (Saving cases); /qua-explore, /qua-record",
+      "decision": "LLM: step wording; human: confirms save",
+      "matrix_row": [
+        "4.1"
+      ]
+    },
+    {
+      "id": "qua_login",
+      "name": "qua_login",
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "args_go": "op.LoginInput",
+      "result_go": "op.LoginResult",
+      "result": "{logged_in}; text: logged in",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": true
+      },
+      "ask": "A",
+      "cli": [
+        "qua login"
+      ],
+      "app": null,
+      "skill": "rule: never run, tell the user",
+      "decision": "human: user logs in",
+      "matrix_row": [
+        "1.2"
+      ]
+    },
+    {
+      "id": "qua_session_close",
+      "name": "qua_session_close",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "session"
+      ],
+      "args_go": "op.BrowserSessionCloseInput",
+      "result_go": "op.SessionCloseResult",
+      "result": "{session, closed, kept?, notes?}; text: closed \u003csession\u003e, kept rows of other owners",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": [
+        "qua session close"
+      ],
+      "app": "close tab",
+      "skill": "qua (only when asked)",
+      "decision": null,
+      "matrix_row": [
+        "2.8"
+      ]
+    },
+    {
+      "id": "qua_session_list",
+      "name": "qua_session_list",
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "args_go": "op.BrowserSessionListInput",
+      "result_go": "op.SessionListResult",
+      "result": "{sessions:[{name, browser, window?, last_used_at?, finished_at?, result?, owner?, kind?}]}; text: one line per session",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua session list"
+      ],
+      "app": "Sessions cards",
+      "skill": "qua",
+      "decision": null,
+      "matrix_row": [
+        "2.5"
+      ]
+    },
+    {
+      "id": "qua_session_logs",
+      "name": "qua_session_logs",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "session",
+        "kind?",
+        "tail?"
+      ],
+      "args_go": "op.BrowserSessionLogsInput",
+      "result_go": "op.SessionLogsResult",
+      "result": "{session, lines, note?}; text: console, page errors, failed requests, qua errors",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua session logs"
+      ],
+      "app": "MCP inspector call only",
+      "skill": "/qua-bug-report, /qua-regress, /qua-validate",
+      "decision": "LLM: relevant-line pick",
+      "matrix_row": [
+        "2.14"
+      ]
+    },
+    {
+      "id": "qua_session_screenshot",
+      "name": "qua_session_screenshot",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "session",
+        "full_page?",
+        "label?"
+      ],
+      "args_go": "op.BrowserSessionScreenshotInput",
+      "result_go": "op.Screenshot",
+      "result": "{path}; text: screenshot path; image/png",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua session screenshot"
+      ],
+      "app": "state shots (capturePage)",
+      "skill": "/qua-validate, /qua-bug-report",
+      "decision": null,
+      "matrix_row": [
+        "2.13"
+      ]
+    },
+    {
+      "id": "qua_browser_detect",
+      "name": "qua_browser_detect",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "agent?"
+      ],
+      "args_go": "op.BrowserDetectInput",
+      "result_go": "op.BrowserSummary",
+      "result": "{agent?, engine?, endpoint?, source?, browser_engine?, detected, runtime?, warning?, error?, hint?}; text: endpoint, source, running browsers, setup steps",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": null,
+      "skill": "qua",
+      "decision": null,
+      "matrix_row": [
+        "2.2"
+      ]
+    },
+    {
+      "id": "qua_browser_install",
+      "name": "qua_browser_install",
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "args_go": "op.BrowserInstallInput",
+      "result_go": "op.BrowserInstallResult",
+      "result": "{runtime}; text: runtime status",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": true,
+        "openWorld": true
+      },
+      "ask": "A",
+      "cli": [
+        "qua browser install"
+      ],
+      "app": null,
+      "skill": "qua (only after yes)",
+      "decision": "LLM: asks consent; human: answers",
+      "matrix_row": [
+        "2.1"
+      ]
+    },
+    {
+      "id": "qua_browser_start",
+      "name": "qua_browser_start",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "agent?",
+        "engine?",
+        "profile?"
+      ],
+      "args_go": "op.BrowserStartInput",
+      "result_go": "op.BrowserStartResult",
+      "result": "{agent, engine, reused, profile_dir, ephemeral, endpoint, pid?}; text: endpoint",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": true,
+        "openWorld": true
+      },
+      "ask": "A",
+      "cli": [
+        "qua browser start"
+      ],
+      "app": "own headless Chrome for runs",
+      "skill": "qua (only after yes)",
+      "decision": "human: consent",
+      "matrix_row": [
+        "2.3"
+      ]
+    },
+    {
+      "id": "qua_browser_stop",
+      "name": "qua_browser_stop",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "agent?",
+        "engine?"
+      ],
+      "args_go": "op.BrowserStopInput",
+      "result_go": "op.BrowserStopResult",
+      "result": "{agent, stopped}; text: stopped engines",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": [
+        "qua browser stop"
+      ],
+      "app": "on quit",
+      "skill": "qua (only when asked)",
+      "decision": null,
+      "matrix_row": [
+        "2.4"
+      ]
+    },
+    {
+      "id": "qua_browser_set",
+      "name": "qua_browser_set",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "agent",
+        "browsers"
+      ],
+      "args_go": "op.BrowserSetInput",
+      "result_go": "op.BrowserSetResult",
+      "result": "{agent, browsers}; text: the agent's browsers, default first",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "A",
+      "ask_note": "a Save click in the config widget is consent",
+      "cli": [
+        "qua browser set"
+      ],
+      "app": "Config pane agent cards",
+      "skill": "/qua-init (Form)",
+      "decision": "human: picks browsers",
+      "matrix_row": [
+        "2.16"
+      ]
+    },
+    {
+      "id": "qua_project_get",
+      "name": "qua_project_get",
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "args_go": "op.ProjectGetInput",
+      "result_go": "op.ProjectResult",
+      "result": "{qua_version, agent?, initialized, agents, configured, project, browsers?, runtime?, mcps?}; text: the same",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "MCP view",
+      "skill": "/qua-init",
+      "decision": null,
+      "matrix_row": [
+        "1.4"
+      ]
+    },
+    {
+      "id": "qua_project_set",
+      "name": "qua_project_set",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "app_url?",
+        "integrations?",
+        "other?",
+        "qua_env?",
+        "stages?"
+      ],
+      "args_go": "op.ProjectSetInput",
+      "result_go": "op.ProjectResult",
+      "result": "{qua_version, agent?, initialized, agents, configured, project, browsers?, runtime?, mcps?}; text: merged project.yaml",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "B",
+      "ask_note": "inferred, not in 0035",
+      "cli": null,
+      "app": "config widget Save",
+      "skill": "/qua-init",
+      "decision": "LLM: integration category and provider guess",
+      "matrix_row": [
+        "1.4"
+      ]
+    },
+    {
+      "id": "qua_project_configure",
+      "name": "qua_project_configure",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "mcps?"
+      ],
+      "args_go": "op.ProjectConfigureInput",
+      "result_go": "op.ProjectConfigureResult",
+      "result": "{qua_version, agent?, initialized, agents, configured, project, browsers?, runtime?, mcps?} + ui://qua/config.html widget; every agent with its browsers",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "chat iframe",
+      "skill": "/qua-init (Form)",
+      "decision": "human: form fields",
+      "matrix_row": [
+        "1.5"
+      ],
+      "widget_calls": [
+        "qua_project_set",
+        "qua_browser_set",
+        "qua_mcp_set"
+      ]
+    },
+    {
+      "id": "qua_ui_probe",
+      "name": "qua_ui_probe",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "echo?"
+      ],
+      "args_go": "op.UIProbeInput",
+      "result": "text + ui://qua/probe.html widget",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "chat iframe",
+      "skill": "/qua-init (probe on request)",
+      "decision": null,
+      "matrix_row": [
+        "1.5"
+      ]
+    },
+    {
+      "id": "qua_mcp_list",
+      "name": "qua_mcp_list",
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "args_go": "op.MCPListInput",
+      "result_go": "op.MCPList",
+      "result": "{project, project_file, user_file, servers:[{name, source, status, reason?, transport?, command?, args?, url?, env?, headers?, refs?, overrides?, hash?}], problems?}; status approved|needs_approval|disabled|skipped; env and headers hold refs, never values",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua mcp list"
+      ],
+      "app": "Config pane Servers section (0051)",
+      "skill": null,
+      "decision": "code: merge by name, user wins; human: approval",
+      "matrix_row": [
+        "1.10"
+      ]
+    },
+    {
+      "id": "qua_mcp_set",
+      "name": "qua_mcp_set",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "name",
+        "target",
+        "args?",
+        "command?",
+        "enabled?",
+        "env?",
+        "headers?",
+        "remove?",
+        "transport?",
+        "url?"
+      ],
+      "args_go": "op.MCPSetInput",
+      "result_go": "op.MCPSetResult",
+      "result": "{target, file, name, removed?, server?}; env and headers take refs only, literals rejected; project servers then need a human approval",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "A",
+      "ask_note": "target user runs without approval (0051 answer 5)",
+      "cli": [
+        "qua mcp set"
+      ],
+      "app": "Config pane Servers section (0051)",
+      "skill": null,
+      "decision": "human: consent; approval for project servers",
+      "matrix_row": [
+        "1.10"
+      ]
+    },
+    {
+      "id": "cli_patch",
+      "name": null,
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "result": "text: patch state",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": [
+        "qua patch",
+        "qua patch list",
+        "qua patch apply",
+        "qua patch unapply"
+      ],
+      "app": null,
+      "skill": "/qua-init offers qua patch",
+      "decision": null,
+      "matrix_row": [
+        "1.6"
+      ]
+    },
+    {
+      "id": "cli_mcp",
+      "name": null,
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "result": "stdio MCP server",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua mcp"
+      ],
+      "app": "spawns qua mcp",
+      "skill": null,
+      "decision": null,
+      "matrix_row": []
+    },
+    {
+      "id": "cli_mcp_approval",
+      "name": null,
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "result": "{name, source, status, reason?, refs?, ...} (op.MCPServerView); human approval of a project MCP server, never an MCP tool (0035, 0051)",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "A",
+      "ask_note": "human only; the ATE Approve button calls the same handler",
+      "cli": [
+        "qua mcp approve",
+        "qua mcp revoke"
+      ],
+      "app": "ATE Approve button (0051)",
+      "skill": null,
+      "decision": "human: approves each project server and its refs",
+      "matrix_row": [
+        "1.10"
+      ]
+    },
+    {
+      "id": "cli_mcp_resolved",
+      "name": null,
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "result": "{project, servers:[ACP McpServer + source, type; secret values resolved], skipped:[{name, source, status, reason, line}], problems?}; ATE only, hidden, never an MCP tool",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua mcp resolved"
+      ],
+      "app": "ATE session/new mcpServers (0051)",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "1.10"
+      ]
+    },
+    {
+      "id": "cli_version",
+      "name": null,
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "result": "text: version",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua version"
+      ],
+      "app": null,
+      "skill": null,
+      "decision": null,
+      "matrix_row": []
+    },
+    {
+      "id": "session_list",
+      "name": "session_list",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [],
+      "result": "text; proposed JSON with id, title, lastState, targetId",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Sessions cards",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.5"
+      ]
+    },
+    {
+      "id": "session_new",
+      "name": "session_new",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "url",
+        "name?"
+      ],
+      "result": "text: session",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "B",
+      "ask_note": "origin outside the stages",
+      "cli": null,
+      "app": "New session form",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.6"
+      ]
+    },
+    {
+      "id": "session_navigate",
+      "name": "session_navigate",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "url",
+        "session?"
+      ],
+      "result": "text",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "B",
+      "ask_note": "off-origin only",
+      "cli": null,
+      "app": "in-page links",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.12"
+      ]
+    },
+    {
+      "id": "session_reload",
+      "name": "session_reload",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "session?",
+        "hard?"
+      ],
+      "result": "text",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "B",
+      "ask_note": "as session_navigate",
+      "cli": null,
+      "app": "Refresh and Hard refresh (toolbar, Cmd+R, Cmd+Shift+R)",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.12"
+      ]
+    },
+    {
+      "id": "session_click",
+      "name": "session_click",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "text",
+        "session?"
+      ],
+      "result": "text",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "live view click",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.11",
+        "3.1"
+      ]
+    },
+    {
+      "id": "session_snapshot",
+      "name": "session_snapshot",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "session?"
+      ],
+      "result": "text: aria snapshot, 4000 chars",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "live view",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.11"
+      ]
+    },
+    {
+      "id": "qua_case_list",
+      "name": "qua_case_list",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "suite?"
+      ],
+      "args_go": "op.CaseListInput",
+      "result_go": "op.CaseList",
+      "result": "{source, cases:[{suite,name,file,steps,stages}], problems?}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua case list"
+      ],
+      "app": "Test cases view",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "4.2"
+      ]
+    },
+    {
+      "id": "qua_case_get",
+      "name": "qua_case_get",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "suite",
+        "name"
+      ],
+      "args_go": "op.CaseGetInput",
+      "result_go": "op.CaseDetail",
+      "result": "{source, suite, name, file, steps, stages}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua case get"
+      ],
+      "app": "Test cases view",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "4.2"
+      ]
+    },
+    {
+      "id": "qua_case_resolved",
+      "name": "qua_case_resolved",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "suite",
+        "case"
+      ],
+      "args_go": "op.CaseResolvedInput",
+      "result_go": "op.CaseResolved",
+      "result": "{source, suite, case, file, locked, steps:[{step, prose, resolved, stale, prose_hash?, action?, params?, value?, value_ref?, map_id?, page?, state?, locator?, css_fallback?, field?, comparison?, negated?, sub_steps?}]} (0046; sub_steps lock the lines of step:\u003cid\u003e)",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua case resolved"
+      ],
+      "app": null,
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "4.2"
+      ]
+    },
+    {
+      "id": "qua_generate",
+      "name": "qua_generate",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "case?",
+        "check?",
+        "out?",
+        "suite?"
+      ],
+      "args_go": "op.GenerateInput",
+      "result_go": "op.Generated",
+      "result": "{source, out, check, changed, files:[{suite?, case?, path, status, reason?, hash?, todos?:[{step, reason}], content?}], problems?}; status written|unchanged|differs|missing|orphan|removed|skipped|error|rendered; check fails when changed \u003e 0 (0046)",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "B",
+      "ask_note": "writes and prunes specs and action module copies under out; check writes nothing",
+      "cli": [
+        "qua generate"
+      ],
+      "app": null,
+      "skill": null,
+      "decision": "code: deterministic emitter from locks",
+      "matrix_row": [
+        "4.10"
+      ]
+    },
+    {
+      "id": "qua_run_list",
+      "name": "qua_run_list",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "suite?",
+        "status?",
+        "limit?",
+        "cursor?"
+      ],
+      "args_go": "op.RunListInput",
+      "result_go": "op.RunList",
+      "result": "{source, runs:[{id,run_id,suite,case,status,trigger?,started_at,finished_at,duration_ms,steps,passed,session,log,shots?}], next_cursor?, problems?}; newest first, limit 50, max 500; a local case that is still running has status running",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua run list"
+      ],
+      "app": "Test runs view",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "3.5"
+      ]
+    },
+    {
+      "id": "qua_run_get",
+      "name": "qua_run_get",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "id"
+      ],
+      "args_go": "op.RunGetInput",
+      "result_go": "op.RunDetail",
+      "result": "{source, id, run_id, suite, case, status, started_at, finished_at?, duration_ms, session?, log, error?, live, live_url?, shots, steps:[{prose,status,reason?,shot?,judgments,sub_steps?:[{prose,status,reason?}]}]}; while live, status running and unreached steps pending; a call on a live run turns its live shot on for 10 s",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua run get"
+      ],
+      "app": "run detail",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "3.6"
+      ]
+    },
+    {
+      "id": "qua_map_get",
+      "name": "qua_map_get",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "page?",
+        "session?"
+      ],
+      "args_go": "op.MapGetInput",
+      "result_go": "op.MapGraph",
+      "result": "{source, pages:[{id,route,page_type,title,state_count,states?:[{fp,parent?,kind,url?,title?,summary?,dialog?,name,has_shot?}]}], edges?, edge_count, current?, last_states?:[{session,fp,kind?,at?}]}; states and edges only with page; last_states only without session",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua map get"
+      ],
+      "app": "UI map and Graph views",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "4.5",
+        "4.7"
+      ]
+    },
+    {
+      "id": "qua_map_state",
+      "name": "qua_map_state",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "fp"
+      ],
+      "args_go": "op.MapStateInput",
+      "result_go": "op.MapStateDetail",
+      "result": "{source, fp, alias?, page, parent?, kind, url?, title?, summary?, dialog?, name, has_shot?, shot?, elements, classified}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua map state"
+      ],
+      "app": "UI map elements table",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "4.6"
+      ]
+    },
+    {
+      "id": "qua_runs_view",
+      "name": "qua_runs_view",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "id?",
+        "suite?",
+        "open?"
+      ],
+      "args_go": "op.RunsViewInput",
+      "result": "text: run list or one run's steps; ui://qua/runs.html widget; open lists expanded run groups (run_id; [] all collapsed); the widget reports id and open back (ui/update-model-context)",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Test runs tab (widget)",
+      "skill": "/qua-regress",
+      "decision": null,
+      "matrix_row": [
+        "3.5",
+        "3.6"
+      ]
+    },
+    {
+      "id": "qua_map_view",
+      "name": "qua_map_view",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "page?",
+        "fp?",
+        "tab?",
+        "k?",
+        "tx?",
+        "ty?",
+        "center?"
+      ],
+      "args_go": "op.MapViewInput",
+      "result": "text: pages, states, edges or one state; ui://qua/map.html widget (tree, graph, state detail); k, tx, ty set the graph viewport, center is a state fp, fit or 1:1; the widget reports fp, tab, k, tx, ty back (ui/update-model-context)",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "UI map and graph tabs (widget)",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "4.5",
+        "4.6",
+        "4.7"
+      ],
+      "widget_calls": [
+        "qua_explore"
+      ]
+    },
+    {
+      "id": "qua_cases_view",
+      "name": "qua_cases_view",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "suite?",
+        "name?",
+        "open?"
+      ],
+      "args_go": "op.CasesViewInput",
+      "result": "text: cases by suite with steps and stages; ui://qua/cases.html widget; name accepts suite/name, and an unqualified name that matches several suites is case_error ambiguous with the candidate suites; open lists expanded suites ([] all collapsed); the widget reports name as suite/name and open back (ui/update-model-context)",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Test cases tab (widget), Run per case",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "4.2"
+      ],
+      "widget_calls": [
+        "qua_run"
+      ]
+    },
+    {
+      "id": "qua_shot_get",
+      "name": "qua_shot_get",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "kind",
+        "id",
+        "step?"
+      ],
+      "args_go": "op.ShotGetInput",
+      "result_go": "op.Shot",
+      "result": "JPEG of a run step (step 0: newest, the live shot while a watched run runs), a map state shot (.qua/screenshots/states/\u003cfp\u003e.jpg) or, for kind review (id = session), the live window without the overlay plus the review's boxes; at most 100k base64 chars; widget only",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "shots in the runs and map widgets",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "3.6",
+        "4.6"
+      ],
+      "visibility": [
+        "app"
+      ]
+    },
+    {
+      "id": "qua_review_view",
+      "name": "qua_review_view",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "session"
+      ],
+      "args_go": "op.ReviewGetInput",
+      "result_go": "op.ReviewView",
+      "result": "{session, open, review_id?, state?, candidates:[{n, map_id, label?, box}], viewport?, note?}; ui://qua/review.html widget, shot via qua_shot_get kind review",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "review overlay as a widget (numbered boxes on the shot)",
+      "skill": "qua",
+      "decision": "human: picks candidate in the widget",
+      "matrix_row": [
+        "2.15",
+        "3.2"
+      ],
+      "widget_calls": [
+        "qua_review_answer"
+      ]
+    },
+    {
+      "id": "qua_explore_status",
+      "name": "qua_explore_status",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "session"
+      ],
+      "args_go": "op.ExploreStatusInput",
+      "result_go": "op.ExploreStatus",
+      "result": "{id, session, running, started_at, ended_at?, steps, states_before, states_after, edges_before, edges_after, lines, stopped?, error?}; id is new per explore, reset when it starts; lines are the last 50; after counts are live until ended_at",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "explore progress in the map widget",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "4.7"
+      ]
+    },
+    {
+      "id": "qua_review_answer",
+      "name": "qua_review_answer",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "session",
+        "review_id",
+        "map_id?",
+        "cancel?"
+      ],
+      "args_go": "op.ReviewAnswerInput",
+      "result_go": "op.ReviewAnswerResult",
+      "result": "{session, review_id, map_id?, cancel?, detail}; text: answered map_id | cancel, closes the review; the waiting qua_review_pick returns it; errors no_review, stale_review, already_answered, not_a_candidate; widget only",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "C",
+      "ask_note": "the click is consent",
+      "cli": [
+        "qua review answer"
+      ],
+      "app": "review widget pick and Cancel",
+      "skill": null,
+      "decision": "human: picks candidate; code: candidate check",
+      "matrix_row": [
+        "2.15",
+        "3.2"
+      ],
+      "visibility": [
+        "app"
+      ]
+    },
+    {
+      "id": "ui_state_get",
+      "name": "ui_state_get",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "sections?"
+      ],
+      "result": "{rev, project, layout, focus, sessions, chats, picking, explore, runs_running, prefs}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Everything the user sees, in one read",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.5",
+        "4.3",
+        "4.7",
+        "6.1",
+        "7.2"
+      ]
+    },
+    {
+      "id": "ui_events",
+      "name": "ui_events",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "since_rev",
+        "epoch?",
+        "timeout_s?"
+      ],
+      "result": "{rev, epoch, events:[{rev,type,id,by}], gap?}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Long poll for UI changes (default 25 s, max 50 s)",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "3.4",
+        "6.2"
+      ]
+    },
+    {
+      "id": "ui_screenshot",
+      "name": "ui_screenshot",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "pane?"
+      ],
+      "result": "metadata text {rev, window, pane, width, height} + PNG image",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "The window as the user sees it",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "4.7",
+        "6.3"
+      ]
+    },
+    {
+      "id": "ui_layout_get",
+      "name": "ui_layout_get",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [],
+      "result": "{rev, panes:[…], live_owner}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Panes, tabs, widths, active tab",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.5",
+        "7.2"
+      ]
+    },
+    {
+      "id": "ui_layout_apply",
+      "name": "ui_layout_apply",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "panes",
+        "expected_rev?"
+      ],
+      "result": "{rev, layout}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Agent convenience: set a whole layout at once (no UI twin)",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.5",
+        "7.2"
+      ]
+    },
+    {
+      "id": "ui_tab_open",
+      "name": "ui_tab_open",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "kind",
+        "pane?",
+        "activate?",
+        "expected_rev?"
+      ],
+      "result": "{rev, tab, pane, layout}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Open a view in a pane",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.6"
+      ]
+    },
+    {
+      "id": "ui_tab_activate",
+      "name": "ui_tab_activate",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "tab",
+        "expected_rev?"
+      ],
+      "result": "{rev, tab, layout}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Bring a tab to the front",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.7"
+      ]
+    },
+    {
+      "id": "ui_tab_close",
+      "name": "ui_tab_close",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "tab",
+        "expected_rev?"
+      ],
+      "result": "{rev, tab, layout}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Close a tab",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.7"
+      ]
+    },
+    {
+      "id": "ui_tab_move",
+      "name": "ui_tab_move",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "tab",
+        "pane",
+        "index?",
+        "expected_rev?"
+      ],
+      "result": "{rev, tab, pane, layout}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Move a tab between panes",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.7"
+      ]
+    },
+    {
+      "id": "ui_pane_split",
+      "name": "ui_pane_split",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "pane",
+        "expected_rev?"
+      ],
+      "result": "{rev, pane, tab, layout}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Split right, max 3 panes",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.8"
+      ]
+    },
+    {
+      "id": "ui_pane_collapse",
+      "name": "ui_pane_collapse",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "pane",
+        "collapsed",
+        "expected_rev?"
+      ],
+      "result": "{rev, pane, layout}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Collapse or restore a pane",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.8"
+      ]
+    },
+    {
+      "id": "ui_pane_resize",
+      "name": "ui_pane_resize",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "pane",
+        "width_px",
+        "expected_rev?"
+      ],
+      "result": "{rev, pane, width_px, neighbor, layout}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Splitter drag",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.8"
+      ]
+    },
+    {
+      "id": "ui_browser_show_here",
+      "name": "ui_browser_show_here",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "tab",
+        "expected_rev?"
+      ],
+      "result": "{rev, tab, session, layout}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Give a browser tab the live view",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.7"
+      ]
+    },
+    {
+      "id": "ui_pick_start",
+      "name": "ui_pick_start",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "mode?",
+        "deliver?",
+        "timeout_s?"
+      ],
+      "result": "{rev, kind, css_path, role, name, map_id, rect, note, url, session, image, attachment?} or {cancelled}; timeout keeps pick on 5 s for the next call; busy",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Ask the user to pick an element or region; blocks up to timeout_s",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.15"
+      ]
+    },
+    {
+      "id": "ui_pick_cancel",
+      "name": "ui_pick_cancel",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [],
+      "result": "{rev, cancelled}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Stop pick mode",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.15"
+      ]
+    },
+    {
+      "id": "ui_pick_element",
+      "name": "ui_pick_element",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "css_path?",
+        "map_id?",
+        "role?",
+        "name?",
+        "session?",
+        "deliver?"
+      ],
+      "result": "{rev, kind, css_path, role, name, map_id, rect, image, attachment?}; ambiguous or not_found with candidates",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Attach an element without the user",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.15"
+      ]
+    },
+    {
+      "id": "ui_select",
+      "name": "ui_select",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "kind",
+        "id",
+        "tab?",
+        "expected_rev?"
+      ],
+      "result": "{rev, selected: {kind, id, tab}, layout}; written into the view tab's args (qua_*_view name, id, fp, page)",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Select a case, run, map state or page in a view",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.10"
+      ]
+    },
+    {
+      "id": "ui_expand",
+      "name": "ui_expand",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "kind",
+        "id",
+        "open",
+        "tab?",
+        "expected_rev?"
+      ],
+      "result": "{rev, open: {kind, id, open, tab}, layout}; adds or removes id in the view tab's open list: mcp_server (MCP view), suite (qua_cases_view open), run_group (qua_runs_view open, run_id)",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Expand an MCP server, a suite or a run group",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.10"
+      ]
+    },
+    {
+      "id": "ui_graph_view",
+      "name": "ui_graph_view",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "tab",
+        "action",
+        "k?",
+        "tx?",
+        "ty?",
+        "center_on?"
+      ],
+      "result": "{rev, tab, args, layout}; actions fit, 1:1, zoom, pan, center write qua_map_view k, tx, ty, center into the graph tab's args; the widget reports the applied viewport back",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Fit, 1:1, zoom, pan, centre",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "6.11"
+      ]
+    },
+    {
+      "id": "ui_mcp_get",
+      "name": "ui_mcp_get",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "server?"
+      ],
+      "result": "{rev, servers, agent}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "What the MCP view shows",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "5.12"
+      ]
+    },
+    {
+      "id": "ui_project_list",
+      "name": "ui_project_list",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [],
+      "result": "{rev, projects: [{path, name, last_used_at, missing, is_project, current}]}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Registry list; works with no project open",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "1.7"
+      ]
+    },
+    {
+      "id": "ui_project_open",
+      "name": "ui_project_open",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "project"
+      ],
+      "result": "{rev, project, already, ends_agents}; not_found or ambiguous with candidates",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": null,
+      "app": "Open a registered project by path or name; ends the calling agent",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "1.8"
+      ]
+    },
+    {
+      "id": "ui_project_remove",
+      "name": "ui_project_remove",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "project"
+      ],
+      "result": "{rev, removed, projects}; not_found or ambiguous with candidates",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": null,
+      "app": "Remove a registered project by path or name from the list",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "1.7"
+      ]
+    },
+    {
+      "id": "ui_project_init",
+      "name": "ui_project_init",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "path",
+        "agents?"
+      ],
+      "result": "{rev, ok, existed, path, command, out, projects}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": null,
+      "app": "Non-interactive `qua init` in an existing absolute folder; registers it",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "1.3"
+      ]
+    },
+    {
+      "id": "ui_project_switch",
+      "name": "ui_project_switch",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [],
+      "result": "{rev, picker, ends_agents}",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": null,
+      "app": "Back to the picker; ends the calling agent",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "1.8"
+      ]
+    },
+    {
+      "id": "session_select",
+      "name": "session_select",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "session",
+        "expected_rev?"
+      ],
+      "result": "{rev, session}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Make a session current",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.7"
+      ]
+    },
+    {
+      "id": "session_rename",
+      "name": "session_rename",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "session",
+        "name",
+        "expected_rev?"
+      ],
+      "result": "{rev, session}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Rename",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.7"
+      ]
+    },
+    {
+      "id": "session_expand",
+      "name": "session_expand",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "session",
+        "expected_rev?"
+      ],
+      "result": "{rev, panel, cookieErrors, session}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "B",
+      "cli": null,
+      "app": "Hand over to a Chromium window with side panel",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.9"
+      ]
+    },
+    {
+      "id": "session_collapse",
+      "name": "session_collapse",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "session",
+        "expected_rev?"
+      ],
+      "result": "{rev, session}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Bring it back embedded",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.9"
+      ]
+    },
+    {
+      "id": "session_save_auth",
+      "name": "session_save_auth",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "session"
+      ],
+      "result": "{rev, auth, file}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": null,
+      "app": "Write session cookies and storage to disk",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.10"
+      ]
+    },
+    {
+      "id": "session_close",
+      "name": "session_close",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "session",
+        "expected_rev?"
+      ],
+      "result": "{rev, closed, session}",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": null,
+      "app": "Destroy view and clear storage",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.8"
+      ]
+    },
+    {
+      "id": "session_auth_list",
+      "name": "session_auth_list",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [],
+      "result": "{rev, auth: [name]}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Saved auth states",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.10"
+      ]
+    },
+    {
+      "id": "session_start_from_auth",
+      "name": "session_start_from_auth",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "auth",
+        "name?"
+      ],
+      "result": "{rev, session}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": null,
+      "app": "New session from stored credentials",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "2.10"
+      ]
+    },
+    {
+      "id": "chat_new",
+      "name": "chat_new",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "agent?",
+        "model?",
+        "light?",
+        "session?"
+      ],
+      "result": "{chat}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "ask_note": "A with light:false (full profile)",
+      "cli": null,
+      "app": "New thread (not focused)",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "5.3"
+      ]
+    },
+    {
+      "id": "chat_models_get",
+      "name": "chat_models_get",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "agent"
+      ],
+      "result": "{options, current, loading, fetchedAt, error, caps}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Model list and default",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "7.1"
+      ]
+    },
+    {
+      "id": "chat_models_refresh",
+      "name": "chat_models_refresh",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "agent"
+      ],
+      "result": "{loading}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "B",
+      "cli": null,
+      "app": "Refetch models in background",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "7.1"
+      ]
+    },
+    {
+      "id": "chat_list",
+      "name": "chat_list",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [],
+      "result": "{chats: [{id,title,agent,model,session,status,unread,last,lastAt}], focused}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Threads of this project",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "5.2"
+      ]
+    },
+    {
+      "id": "chat_focus",
+      "name": "chat_focus",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "chat",
+        "show?"
+      ],
+      "result": "{chat, layout}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Focus a thread and show it",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "5.2"
+      ]
+    },
+    {
+      "id": "chat_set",
+      "name": "chat_set",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "chat",
+        "agent?",
+        "light?",
+        "session?"
+      ],
+      "result": "{chat}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "ask_note": "A with light:false (full profile)",
+      "cli": null,
+      "app": "Agent and light (before first message); bound session",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "5.3",
+        "5.4",
+        "7.1"
+      ]
+    },
+    {
+      "id": "chat_read",
+      "name": "chat_read",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "chat",
+        "since_i?",
+        "limit?",
+        "include?"
+      ],
+      "result": "{chat, items, next_i}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Transcript",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "5.5",
+        "5.10"
+      ]
+    },
+    {
+      "id": "chat_send",
+      "name": "chat_send",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "chat",
+        "text",
+        "attachments?",
+        "dry_run?",
+        "wait?"
+      ],
+      "result": "{chat, started} | {chat, started: true, running: true} after the wait timeout | {chat, stopReason}; dry_run: {dry_run: true, blocks}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": null,
+      "app": "Send a prompt; never to the calling chat",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "5.6"
+      ]
+    },
+    {
+      "id": "chat_draft_get",
+      "name": "chat_draft_get",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "chat"
+      ],
+      "result": "{text, attachments}",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Composer content",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "5.7"
+      ]
+    },
+    {
+      "id": "chat_draft_set",
+      "name": "chat_draft_set",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "chat",
+        "text",
+        "append?"
+      ],
+      "result": "{draft}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Prefill the composer",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "5.7"
+      ]
+    },
+    {
+      "id": "chat_draft_remove",
+      "name": "chat_draft_remove",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "chat",
+        "attachment"
+      ],
+      "result": "{draft}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": null,
+      "app": "Remove an attachment",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "5.7"
+      ]
+    },
+    {
+      "id": "chat_cancel",
+      "name": "chat_cancel",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "chat"
+      ],
+      "result": "{cancelled}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "B",
+      "cli": null,
+      "app": "Stop button",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "5.8"
+      ]
+    },
+    {
+      "id": "chat_set_model",
+      "name": "chat_set_model",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "chat",
+        "value"
+      ],
+      "result": "{current, live}",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "B",
+      "cli": null,
+      "app": "Model for a chat and default for the agent",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "7.1"
+      ]
+    },
+    {
+      "id": "chat_delete",
+      "name": "chat_delete",
+      "server": "qua-app",
+      "status": "shipped",
+      "args": [
+        "chat"
+      ],
+      "result": "{deleted}",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "A",
+      "cli": null,
+      "app": "Delete a thread; never the calling chat",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "5.11"
+      ]
+    }
+  ],
+  "domains": [
+    {
+      "id": "setup",
+      "title": "Setup and projects"
+    },
+    {
+      "id": "browser",
+      "title": "Browser and sessions"
+    },
+    {
+      "id": "runs",
+      "title": "Steps and runs"
+    },
+    {
+      "id": "authoring",
+      "title": "Authoring and UI map"
+    },
+    {
+      "id": "chat",
+      "title": "Chat and agents"
+    },
+    {
+      "id": "layout",
+      "title": "Layout and window"
+    },
+    {
+      "id": "settings",
+      "title": "Settings"
+    }
+  ],
+  "rows": [
+    {
+      "id": "1.1",
+      "domain": "setup",
+      "capability": "Install binary",
+      "owner": "cli",
+      "reach": {
+        "ate": "wraps"
+      },
+      "cells": {
+        "ate": "✓ bundled `bin/qua`",
+        "cli": "✓ `install.sh`",
+        "skill": "✓ `bootstrap.md`; `/qua-init` step 0"
+      }
+    },
+    {
+      "id": "1.2",
+      "domain": "setup",
+      "capability": "Login",
+      "owner": "core",
+      "decision": "human: user logs in",
+      "cells": {
+        "skill": "✓ rule: never run, tell the user"
+      }
+    },
+    {
+      "id": "1.3",
+      "domain": "setup",
+      "capability": "Init project",
+      "note": "Four entry points, one op.",
+      "owner": "core",
+      "decision": "human: consent (ask A)",
+      "reach": {
+        "ate": "wraps",
+        "mcp_app": "wraps"
+      },
+      "status": "partial",
+      "cells": {
+        "ate": "✓ picker Init runs `qua init --agents claude,cursor --browsers \u003cagent\u003e=ide,playwright --no-plugin` under a fake HOME; missing agents added on open (0039)",
+        "mcp_qua": "◐ inits server cwd only",
+        "skill": "✓ `/qua-init` gate offers `qua init`"
+      }
+    },
+    {
+      "id": "1.4",
+      "domain": "setup",
+      "capability": "Project data (URL, stages, env, integrations)",
+      "owner": "core",
+      "decision": "LLM: integration category/provider guess; LLM: probe status",
+      "reach": {
+        "ate": "wraps"
+      },
+      "cells": {
+        "ate": "◐ MCP view may call `qua_project_get` only",
+        "cli": "✗ no `qua project get/set`",
+        "skill": "✓ `/qua-init` steps; set only via `project_set`"
+      }
+    },
+    {
+      "id": "1.5",
+      "domain": "setup",
+      "capability": "MCP Apps widgets (config form, probe)",
+      "note": "Fix: allowlist by `readOnlyHint` plus explicit `qua_project_set`.",
+      "owner": "mcp",
+      "decision": "human: form fields",
+      "reach": {
+        "ate": "MCP App"
+      },
+      "status": "partial",
+      "cells": {
+        "ate": "✓ Config pane and chat iframe; saves via `qua_project_set`, `qua_browser_set`, `qua_mcp_set`",
+        "skill": "✓ `/qua-init` Form; probe only on request"
+      }
+    },
+    {
+      "id": "1.6",
+      "domain": "setup",
+      "capability": "Cursor bridge patch",
+      "note": "CLI only by design.",
+      "owner": "cursor",
+      "cells": {
+        "skill": "✓ `/qua-init` offers `qua patch`"
+      }
+    },
+    {
+      "id": "1.7",
+      "domain": "setup",
+      "capability": "Project registry (list, remove)",
+      "owner": "core",
+      "reach": {
+        "ate": "native copy",
+        "mcp_app": "native copy"
+      },
+      "cells": {
+        "ate": "✓ picker list, open, remove, choose-dir (`projects.cjs`, own lock)",
+        "cli": "◐ writes only: every command but `hook` (`init` included) upserts `~/.qua/projects.json` by real path",
+        "mcp_app": "own registry reader in the app",
+        "mcp_qua": "✗",
+        "skill": "✗"
+      }
+    },
+    {
+      "id": "1.8",
+      "domain": "setup",
+      "capability": "Open and switch project",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ picker Open; app bar Switch"
+      }
+    },
+    {
+      "id": "1.9",
+      "domain": "setup",
+      "capability": "Native folder dialog, quit app",
+      "owner": "ate",
+      "decision": "human: user only",
+      "cells": {
+        "ate": "✓ Choose folder…; close window / quit",
+        "mcp_app": "✗ human only: agent passes `path`; cannot quit its host"
+      }
+    },
+    {
+      "id": "1.10",
+      "domain": "setup",
+      "capability": "ATE MCP servers from Qua config (list, set, approve, resolve)",
+      "note": "Project servers need a human approval; resolved values go to the ATE only (0051).",
+      "owner": "core",
+      "decision": "human: approves each project server; code: merge, refs, hash",
+      "reach": {
+        "ate": "wraps"
+      },
+      "cells": {
+        "ate": "+ session/new from `qua mcp resolved`, Approve button; ✓ Servers section in the Config widget (`qua_mcp_list`, `qua_mcp_set`)"
+      }
+    },
+    {
+      "id": "2.1",
+      "domain": "browser",
+      "capability": "Install Playwright runtime",
+      "owner": "core",
+      "decision": "LLM: asks consent; human: answers",
+      "cells": {
+        "skill": "✓ only after yes"
+      }
+    },
+    {
+      "id": "2.2",
+      "domain": "browser",
+      "capability": "Detect browser",
+      "owner": "core",
+      "cells": {
+        "cli": "✗ MCP only",
+        "skill": "✓ `qua`"
+      }
+    },
+    {
+      "id": "2.3",
+      "domain": "browser",
+      "capability": "Start browser",
+      "owner": "core",
+      "decision": "human: consent",
+      "reach": {
+        "ate": "native copy"
+      },
+      "cells": {
+        "ate": "✓ own headless Chrome for runs (`ensureRunChrome`); Chrome on expand",
+        "skill": "✓ only after yes"
+      }
+    },
+    {
+      "id": "2.4",
+      "domain": "browser",
+      "capability": "Stop browser",
+      "owner": "core",
+      "reach": {
+        "ate": "native copy"
+      },
+      "cells": {
+        "ate": "✓ on quit (`stopAll`)",
+        "skill": "✓ only when asked"
+      }
+    },
+    {
+      "id": "2.5",
+      "domain": "browser",
+      "capability": "Session list and read-out",
+      "note": "Registry and app sessions bridged by `writeRegistry`.",
+      "owner": "core",
+      "reach": {
+        "ate": "native copy",
+        "mcp_app": "native copy"
+      },
+      "status": "partial",
+      "cells": {
+        "ate": "✓ Sessions cards; toolbar read-out and overlay states; panel read-out",
+        "mcp_app": "◐ text; lacks map state, target id",
+        "skill": "✓ `qua`"
+      }
+    },
+    {
+      "id": "2.6",
+      "domain": "browser",
+      "capability": "New session",
+      "note": "0040: stage, name `{project}-{stage}`",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ New session form: stage (default stage), URL, name"
+      }
+    },
+    {
+      "id": "2.7",
+      "domain": "browser",
+      "capability": "Open (reveal) and rename session",
+      "note": "0040: focus its browser tab, else open one outside the requesting pane",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ thumbnail / Open; Rename"
+      }
+    },
+    {
+      "id": "2.8",
+      "domain": "browser",
+      "capability": "Close session",
+      "owner": "core",
+      "reach": {
+        "ate": "wraps",
+        "mcp_app": "native copy"
+      },
+      "status": "partial",
+      "cells": {
+        "ate": "✓ close tab; runs → `qua browser close`",
+        "mcp_app": "closes the app view; registry close is separate",
+        "mcp_qua": "◐ registry only, not the app view",
+        "skill": "✓ only when asked"
+      }
+    },
+    {
+      "id": "2.9",
+      "domain": "browser",
+      "capability": "Expand and collapse (Chromium + side panel)",
+      "note": "Expand opens an OS window; reversible.",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ Expand / Collapse; side panel opens"
+      }
+    },
+    {
+      "id": "2.10",
+      "domain": "browser",
+      "capability": "Saved auth (save, list, start from)",
+      "note": "Writes secrets to `~/.qua-prototype/auth/`.",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ Save auth (storageState); Start from auth"
+      }
+    },
+    {
+      "id": "2.11",
+      "domain": "browser",
+      "capability": "Page interaction and read",
+      "note": "Snapshot truncated; use screenshot for pixels.",
+      "owner": "core",
+      "reach": {
+        "ate": "wraps",
+        "mcp_app": "native copy"
+      },
+      "cells": {
+        "ate": "✓ live view; real Chromium window",
+        "mcp_app": "app-side click and snapshot, no map",
+        "skill": "✓ `qua`"
+      }
+    },
+    {
+      "id": "2.12",
+      "domain": "browser",
+      "capability": "Navigate to URL, reload",
+      "owner": "ate",
+      "cells": {
+        "ate": "◐ no URL bar in prototype; in-page links, new session; ↻ Refresh, shift-click Hard refresh (Cmd+R, Cmd+Shift+R)"
+      }
+    },
+    {
+      "id": "2.13",
+      "domain": "browser",
+      "capability": "Session screenshot",
+      "note": "Window pixels: `ui_screenshot` (Layout).",
+      "owner": "core",
+      "reach": {
+        "ate": "native copy"
+      },
+      "cells": {
+        "ate": "✓ `capturePage` for state shots; runs → CLI",
+        "skill": "✓ `/qua-validate` verdict; `/qua-bug-report`"
+      }
+    },
+    {
+      "id": "2.14",
+      "domain": "browser",
+      "capability": "Session logs",
+      "owner": "core",
+      "decision": "LLM: relevant-line pick",
+      "reach": {
+        "ate": "wraps"
+      },
+      "cells": {
+        "ate": "◐ MCP inspector call only",
+        "skill": "✓ `/qua-bug-report`, `/qua-regress`, `/qua-validate`"
+      }
+    },
+    {
+      "id": "2.15",
+      "domain": "browser",
+      "capability": "Pick element or region (human; or attach by agent)",
+      "note": "ATE picker sends css_path, not map_id.",
+      "owner": "core",
+      "decision": "human: points at element",
+      "reach": {
+        "ate": "native copy",
+        "mcp_app": "native copy"
+      },
+      "status": "proposed",
+      "cells": {
+        "ate": "✓ Pick button (click or drag), note, Esc; panel pick → css_path",
+        "mcp_app": "app picker, separate from the review overlay",
+        "mcp_qua": "◐ review overlay only"
+      }
+    },
+    {
+      "id": "2.16",
+      "domain": "browser",
+      "capability": "Agent browser config (types, default, engine)",
+      "note": "Types `ide` (ATE), `playwright`, `cursor`; 0039.",
+      "owner": "core",
+      "decision": "human: picks browsers",
+      "reach": {
+        "ate": "MCP App"
+      },
+      "cells": {
+        "ate": "✓ Config pane agent cards (Save = consent)",
+        "skill": "◐ `/qua-init` offers changes in the form"
+      }
+    },
+    {
+      "id": "3.1",
+      "domain": "runs",
+      "capability": "Do one step",
+      "owner": "core",
+      "decision": "Jev: step resolution: action + target (`/v1/resolve`); code: pass/review gate: conf\u003c0.5 or margin\u003c0.1 (`gate.ts`); code: fill value `stepValue`",
+      "reach": {
+        "ate": "wraps",
+        "mcp_app": "native copy"
+      },
+      "cells": {
+        "ate": "◐ chat agent calls `do`",
+        "mcp_app": "◐ text match, no map",
+        "skill": "✓ `qua`; `/qua-validate`"
+      }
+    },
+    {
+      "id": "3.2",
+      "domain": "runs",
+      "capability": "Review pick",
+      "owner": "core",
+      "decision": "human: pick candidate in overlay; LLM: pick if one clearly matches; retry/rephrase",
+      "reach": {
+        "ate": "native copy"
+      },
+      "cells": {
+        "ate": "✗ own picker sends css_path, not map_id",
+        "skill": "✓ `qua` Reading results; `/qua-validate`"
+      }
+    },
+    {
+      "id": "3.3",
+      "domain": "runs",
+      "capability": "Run case or suite",
+      "note": "Follow with `ui_tab_open('runs')`.",
+      "owner": "core",
+      "decision": "Jev: per step as `do`; code: review stops case; LLM: suite/stage filter (`/qua-regress`)",
+      "reach": {
+        "ate": "MCP App"
+      },
+      "cells": {
+        "ate": "◐ cases widget Run → `qua_run` in the app's run Chromium (one case, asks first)",
+        "skill": "✓ `qua`; `/qua-regress`"
+      }
+    },
+    {
+      "id": "3.4",
+      "domain": "runs",
+      "capability": "Stream run progress",
+      "note": "Notifications reach the caller of `run` only.",
+      "owner": "core",
+      "reach": {
+        "ate": "MCP App",
+        "mcp_app": "wraps"
+      },
+      "status": "partial",
+      "cells": {
+        "ate": "✓ runs widget polls `qua_run_get` every 2 s while live"
+      }
+    },
+    {
+      "id": "3.5",
+      "domain": "runs",
+      "capability": "Run list and history",
+      "note": "Core `RunList` serves CLI, MCP and the `qua_runs_view` widget.",
+      "owner": "core",
+      "decision": "code: overall status",
+      "reach": {
+        "ate": "MCP App",
+        "mcp_app": "MCP App",
+        "skill": "native copy"
+      },
+      "cells": {
+        "ate": "✓ Test runs tab mounts `ui://qua/runs.html`",
+        "mcp_app": "✓ served by `qua_runs_view` in qua",
+        "skill": "◐ `/qua-regress` cites `.qua/runs/`"
+      }
+    },
+    {
+      "id": "3.6",
+      "domain": "runs",
+      "capability": "Run detail (steps, reasons, shots)",
+      "note": "Main artifact; shots load through `qua_shot_get`.",
+      "owner": "core",
+      "reach": {
+        "ate": "MCP App",
+        "mcp_app": "MCP App"
+      },
+      "cells": {
+        "ate": "✓ run detail in the runs widget",
+        "mcp_app": "✓ served by `qua_runs_view` in qua"
+      }
+    },
+    {
+      "id": "3.7",
+      "domain": "runs",
+      "capability": "Validate ticket",
+      "note": "Skill-only.",
+      "owner": "skill",
+      "decision": "LLM: repro steps from ticket; LLM: verdict: reproduced / not / blocked",
+      "reach": {
+        "ate": "wraps"
+      },
+      "cells": {
+        "ate": "◐ via chat skill",
+        "skill": "✓ `/qua-validate`"
+      }
+    },
+    {
+      "id": "3.8",
+      "domain": "runs",
+      "capability": "Regression summary",
+      "note": "Skill-only.",
+      "owner": "skill",
+      "decision": "LLM: relevant log lines",
+      "cells": {
+        "ate": "✗",
+        "skill": "✓ `/qua-regress`"
+      }
+    },
+    {
+      "id": "4.1",
+      "domain": "authoring",
+      "capability": "Write case",
+      "owner": "core",
+      "decision": "LLM: step split/wording; human: confirms save",
+      "cells": {
+        "ate": "✗ Test cases view read-only",
+        "skill": "✓ `qua` Saving cases; `/qua-explore`, `/qua-record` offer"
+      }
+    },
+    {
+      "id": "4.2",
+      "domain": "authoring",
+      "capability": "Case list and read",
+      "note": "Light profile allows read-only file tools only.",
+      "owner": "core",
+      "reach": {
+        "ate": "MCP App",
+        "skill": "native copy"
+      },
+      "cells": {
+        "ate": "✓ Test cases tab mounts `ui://qua/cases.html`",
+        "skill": "◐ reads files"
+      }
+    },
+    {
+      "id": "4.3",
+      "domain": "authoring",
+      "capability": "Explore",
+      "owner": "core",
+      "decision": "Jev: classification (`/v1/classify`); Jev: new screen or same page (`place`); Jev: destructive check (`risk`): ≥0.7 skip, ≥0.3 needs_human; code: submit-name regex; PR #52 logout regex; human: `allow_submit`",
+      "reach": {
+        "ate": "MCP App",
+        "mcp_app": "wraps"
+      },
+      "cells": {
+        "ate": "✓ map widget Explore → `qua_explore` on the current embedded session (asks first)",
+        "skill": "✓ `/qua-explore`"
+      }
+    },
+    {
+      "id": "4.4",
+      "domain": "authoring",
+      "capability": "Record manual actions",
+      "note": "Passive learn (0029 amendment): map only, no steps; stage hosts only; known states touched, not re-classified.",
+      "owner": "core",
+      "decision": "code: step prose from events; Jev: place/classify as in explore",
+      "reach": {
+        "ate": "wraps"
+      },
+      "cells": {
+        "ate": "◐ toolbar \"Learn the map while I browse\" (passive learn only)",
+        "mcp_qua": "◐ no hints",
+        "skill": "✓ `/qua-record`"
+      }
+    },
+    {
+      "id": "4.5",
+      "domain": "authoring",
+      "capability": "UI map read (pages, states, transitions)",
+      "note": "Core `MapGet` serves CLI, MCP and the `qua_map_view` widget.",
+      "owner": "core",
+      "reach": {
+        "ate": "MCP App",
+        "mcp_app": "MCP App"
+      },
+      "cells": {
+        "ate": "✓ UI map tab mounts `ui://qua/map.html`",
+        "mcp_app": "✓ served by `qua_map_view` in qua",
+        "skill": "✗"
+      }
+    },
+    {
+      "id": "4.6",
+      "domain": "authoring",
+      "capability": "Map state detail (elements, map_id)",
+      "note": "`map_id` is what `do(target=…)` accepts.",
+      "owner": "core",
+      "reach": {
+        "ate": "MCP App",
+        "mcp_app": "MCP App"
+      },
+      "cells": {
+        "ate": "✓ state detail in the map widget",
+        "mcp_app": "✓ served by `qua_map_view` in qua"
+      }
+    },
+    {
+      "id": "4.7",
+      "domain": "authoring",
+      "capability": "Map graph",
+      "owner": "core",
+      "reach": {
+        "ate": "MCP App",
+        "mcp_app": "MCP App"
+      },
+      "cells": {
+        "ate": "✓ Map graph tab mounts `qua_map_view {tab: graph}`",
+        "mcp_app": "✓ served by `qua_map_view` in qua"
+      }
+    },
+    {
+      "id": "4.8",
+      "domain": "authoring",
+      "capability": "Bug report",
+      "note": "Skill-only.",
+      "owner": "skill",
+      "decision": "LLM: draft fields, priority; human: approves create",
+      "reach": {
+        "ate": "wraps"
+      },
+      "cells": {
+        "ate": "◐ via chat skill",
+        "skill": "✓ `/qua-bug-report`"
+      }
+    },
+    {
+      "id": "4.9",
+      "domain": "authoring",
+      "capability": "Test case to test management",
+      "note": "Skill-only.",
+      "owner": "skill",
+      "decision": "LLM: draft fields; human: approves create",
+      "reach": {
+        "ate": "wraps"
+      },
+      "cells": {
+        "ate": "◐ via chat skill",
+        "skill": "✓ `/qua-test-case`"
+      }
+    },
+    {
+      "id": "4.10",
+      "domain": "authoring",
+      "capability": "Generate Playwright specs from locks",
+      "note": "Playwright TS only (0046); other frameworks through `/qua-automate`.",
+      "owner": "core",
+      "decision": "code: deterministic emitter from locks",
+      "cells": {
+        "ate": "✗",
+        "skill": "✗ `/qua-automate` (0046 step 3)"
+      }
+    },
+    {
+      "id": "5.1",
+      "domain": "chat",
+      "capability": "Agent chat (ACP: Claude, Cursor)",
+      "note": "Host of the agent.",
+      "owner": "ate",
+      "decision": "human: tool permission",
+      "cells": {
+        "ate": "✓ ACP chats; `qua` + app MCP (`session_*`); model pick; permission prompts"
+      }
+    },
+    {
+      "id": "5.2",
+      "domain": "chat",
+      "capability": "Chat threads: list, focus, status",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ Chats list; header switcher (last 12); status dot; unread dot"
+      }
+    },
+    {
+      "id": "5.3",
+      "domain": "chat",
+      "capability": "New chat and fixed options (agent, light)",
+      "note": "Agents may not turn light off for their own chat.",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ New chat card; agent segment; light switch"
+      }
+    },
+    {
+      "id": "5.4",
+      "domain": "chat",
+      "capability": "Bind chat to session",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ bound session chip and menu"
+      }
+    },
+    {
+      "id": "5.5",
+      "domain": "chat",
+      "capability": "Read transcript",
+      "note": "Widget HTML omitted.",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ message area: text, thoughts, tool cards, permission and blocked cards"
+      }
+    },
+    {
+      "id": "5.6",
+      "domain": "chat",
+      "capability": "Send message",
+      "note": "Costs money; goes to an external model.",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ composer: Enter sends, Shift+Enter newline"
+      }
+    },
+    {
+      "id": "5.7",
+      "domain": "chat",
+      "capability": "Draft and attachments",
+      "note": "Lets the agent prepare a message instead of sending.",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ attachment chips; composer text edit"
+      }
+    },
+    {
+      "id": "5.8",
+      "domain": "chat",
+      "capability": "Stop turn",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ Stop button"
+      }
+    },
+    {
+      "id": "5.9",
+      "domain": "chat",
+      "capability": "Permission card (Allow / Reject)",
+      "note": "An agent cannot approve itself.",
+      "owner": "ate",
+      "decision": "human: approves tool call",
+      "cells": {
+        "ate": "✓ Allow / Reject",
+        "mcp_app": "✗ human only: no tool answers a card"
+      }
+    },
+    {
+      "id": "5.10",
+      "domain": "chat",
+      "capability": "Blocked card (policy)",
+      "owner": "ate",
+      "decision": "code: client-side policy",
+      "cells": {
+        "ate": "✓ read-only card: shell, edit, delete, move, non-Qua tool"
+      }
+    },
+    {
+      "id": "5.11",
+      "domain": "chat",
+      "capability": "Delete chat",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ delete button on each Chats list row (confirms)"
+      }
+    },
+    {
+      "id": "5.12",
+      "domain": "chat",
+      "capability": "MCP inspector",
+      "note": "Agent calls tools directly; no proxy needed.",
+      "owner": "ate",
+      "decision": "code: allowlist",
+      "cells": {
+        "ate": "✓ MCP view: servers, tools, schemas, widget chips; call read-only allowlist"
+      }
+    },
+    {
+      "id": "6.1",
+      "domain": "layout",
+      "capability": "Read UI state in one call",
+      "note": "Foundation tool.",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ the whole window",
+        "mcp_qua": "✗ `qua_project_get` reads config only, no layout"
+      }
+    },
+    {
+      "id": "6.2",
+      "domain": "layout",
+      "capability": "Change feed",
+      "note": "Long poll, ≤30 s.",
+      "owner": "qua-app"
+    },
+    {
+      "id": "6.3",
+      "domain": "layout",
+      "capability": "Window screenshot",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ window pixels (HTTP `/shot` for tests)"
+      }
+    },
+    {
+      "id": "6.4",
+      "domain": "layout",
+      "capability": "Drag underlay",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ renderer-only",
+        "mcp_app": "✗ implementation detail"
+      }
+    },
+    {
+      "id": "6.5",
+      "domain": "layout",
+      "capability": "Read and apply layout",
+      "note": "`ui_layout_apply` has no UI twin.",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ renderer `L`, saved to `layout.json`"
+      }
+    },
+    {
+      "id": "6.6",
+      "domain": "layout",
+      "capability": "Open view tab",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ \"+\" menu: browser, chat, chats, cases, runs, map, graph, MCP, sessions"
+      }
+    },
+    {
+      "id": "6.7",
+      "domain": "layout",
+      "capability": "Activate, close, move tab; browser tab's session and live view owner",
+      "note": "0040: one session per browser tab, all visible tabs live",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ click, ×, drag; session menu; Show here"
+      }
+    },
+    {
+      "id": "6.8",
+      "domain": "layout",
+      "capability": "Split, collapse, resize pane",
+      "note": "Errors: `limit`.",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ Split right; rail collapse; splitter drag"
+      }
+    },
+    {
+      "id": "6.9",
+      "domain": "layout",
+      "capability": "Popover menus and Esc",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ open-view menu, chat switcher, model menu",
+        "mcp_app": "✗ not needed: tools act on the model"
+      }
+    },
+    {
+      "id": "6.10",
+      "domain": "layout",
+      "capability": "Select and expand in views",
+      "note": "Tier C; shows \"by agent\" mark.",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ view-local selection and expansion (localStorage)"
+      }
+    },
+    {
+      "id": "6.11",
+      "domain": "layout",
+      "capability": "Graph zoom and pan",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ Fit, 1:1, wheel zoom, drag pan"
+      }
+    },
+    {
+      "id": "7.1",
+      "domain": "settings",
+      "capability": "Model lists and choice",
+      "note": "No settings view yet.",
+      "owner": "ate",
+      "cells": {
+        "ate": "✓ model menu; `prefs.json`: model, models, caps"
+      }
+    },
+    {
+      "id": "7.2",
+      "domain": "settings",
+      "capability": "Layout and view state persistence",
+      "owner": "ate",
+      "cells": {
+        "ate": "◐ `layout.json` and localStorage; no reset control"
+      }
+    },
+    {
+      "id": "7.3",
+      "domain": "settings",
+      "capability": "MCP tool hints and allowlist",
+      "note": "Source: gaps and duplicates lists.",
+      "owner": "core",
+      "decision": "code: allowlist from `readOnlyHint`",
+      "reach": {
+        "ate": "native copy",
+        "mcp_app": "native copy"
+      },
+      "status": "partial",
+      "cells": {
+        "ate": "◐ hand-kept `READONLY` set",
+        "mcp_app": "◐ no hints; add one table and a drift test",
+        "mcp_qua": "✓ every tool; `toolHints` generated from this contract"
+      }
+    }
+  ]
+}

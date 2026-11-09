@@ -31,11 +31,11 @@ Do this before anything else. Until it passes, do nothing else: no questions abo
 4. Plugin install without `qua init` (`qua init` writes the same into `.claude/settings.json` for Claude Code):
    - Claude Code: the user runs these.
      ```
-     /plugin marketplace add realdnchka/qua-claude-plugin
+     /plugin marketplace add quahq/qua-plugin
      /plugin install qua@qua
      ```
      `/plugin install` opens the plugin panel, where the user confirms the install.
-   - Cursor imports Claude plugins: in Settings, Plugins, add the marketplace `realdnchka/qua-claude-plugin` and install `qua`, then fully restart Cursor (Cmd+Q).
+   - Cursor imports Claude plugins: in Settings, Plugins, add the marketplace `quahq/qua-plugin` and install `qua`, then fully restart Cursor (Cmd+Q).
 
 **Qua tools available:** call `qua_project_get()` and read `qua_version`. Compare only release versions (`vX.Y.Z`, optionally `-dev.N`): skip the check if either side is `dev`, a Go pseudo-version (`v0.0.0-…`) or ends in `+dirty`. If they differ, tell the user which side is older and how to upgrade it, then ask whether to continue anyway:
 - plugin older: Claude Code: run `/plugin marketplace update qua`, then reload; Cursor: remove the `qua` plugin, add it again from Settings, Plugins, then restart Cursor (it may keep the copy pinned at first install);
