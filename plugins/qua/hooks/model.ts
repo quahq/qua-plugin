@@ -11,7 +11,7 @@ export const READS = new Set([
 ])
 export const WRITE = 'qua_project_set'
 export const SERVERS = ['plugin:qua:qua', 'qua']
-export const QUA_ACT = /^mcp__.+__(qua_)?(run|do|explore)$/
+export const QUA_ACT = /^mcp__(plugin_qua_qua|qua)__qua_(run|do|explore)$/
 export const SVG_MAX = 131072
 
 export type Block = { type: string; text?: string; data?: string; mimeType?: string }

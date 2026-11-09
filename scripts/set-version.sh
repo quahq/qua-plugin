@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Set the plugin to a qua release version, e.g. v1.5.0 or v1.5.0-rc.1-dev.
+# Set the plugin to a qua version, e.g. v1.5.0 or v1.5.0-rc.1-dev.
 set -euo pipefail
 v="${1:?usage: scripts/set-version.sh vX.Y.Z[-pre]}"
 [[ "$v" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "bad version: $v" >&2; exit 1; }

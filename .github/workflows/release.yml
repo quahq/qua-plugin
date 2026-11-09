@@ -1,64 +1,101 @@
 name: Release
 
-# Tags the plugin with the qua release version (ADR 0010, 0054).
+# Sets the plugin to a qua release, then pushes the branch and the same tag (ADR 0010, 0054).
+# qua-cli's release sends repository_dispatch "qua-release" after the binaries are published.
 on:
+  repository_dispatch:
+    types: [qua-release]
   workflow_dispatch:
     inputs:
       version:
         description: qua release tag, e.g. v1.5.0 or v1.5.0-rc.1-dev
         required: true
+      core:
+        description: qua-core version in qua-cli go.mod at that tag, e.g. v0.3.0
+        required: true
 
 concurrency:
-  group: release-${{ inputs.version }}
+  group: release
   cancel-in-progress: false
 
 permissions:
   contents: write
 
+env:
+  CLAUDE_CODE: "2.1.318"
+  OLD_CLAUDE_CODE: "2.1.286"
+
 jobs:
-  tag:
+  release:
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve branch
-        id: branch
+      - name: Resolve inputs
+        id: in
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ github.event.client_payload.version || inputs.version }}
+          CORE: ${{ github.event.client_payload.core || inputs.core }}
         run: |
-          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "::error::bad version $VERSION"; exit 1; }
-          if [[ "$VERSION" == *-dev* ]]; then echo "name=dev" >> "$GITHUB_OUTPUT"; else echo "name=main" >> "$GITHUB_OUTPUT"; fi
+          semver='^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
+          [[ "$VERSION" =~ $semver ]] || { echo "::error::bad version '$VERSION'"; exit 1; }
+          [[ "$CORE" =~ $semver ]] || { echo "::error::bad core '$CORE'"; exit 1; }
+          branch=main; [[ "$VERSION" == *-dev* ]] && branch=dev
+          { echo "version=$VERSION"; echo "core=$CORE"; echo "branch=$branch"; } >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ steps.branch.outputs.name }}
+          ref: ${{ steps.in.outputs.branch }}
+          fetch-depth: 0
+          token: ${{ secrets.QUA_PLUGIN_RELEASE_TOKEN || github.token }}
+
+      - name: Stable takes the dev tree
+        if: steps.in.outputs.branch == 'main'
+        run: |
+          git rm -rq .
+          git checkout origin/dev -- .
+
+      - name: Contract matches the release
+        env:
+          VERSION: ${{ steps.in.outputs.version }}
+          CORE: ${{ steps.in.outputs.core }}
+        run: |
+          got="$(cut -d' ' -f2 contract/SOURCE)"
+          [ "$got" = "$CORE" ] && exit 0
+          msg="contract/SOURCE is qua-core $got, qua $VERSION ships $CORE; vendor contract/tools.json from $CORE"
+          if [[ "$VERSION" == *-dev* ]]; then echo "::warning::$msg"; else echo "::error::$msg"; exit 1; fi
+
+      - name: Set version
+        run: scripts/set-version.sh "${{ steps.in.outputs.version }}"
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Version matches
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          got="v$(node -p 'require("./plugins/qua/.claude-plugin/plugin.json").version')"
-          if [ "$got" != "$VERSION" ]; then
-            echo "::error::plugin.json is $got; run scripts/set-version.sh $VERSION in a PR to ${{ steps.branch.outputs.name }} first"
-            exit 1
-          fi
-
       - name: Checks
         run: |
           node --test tests/drift.test.mjs
-          npm install -g @anthropic-ai/claude-code@latest
+          npm install -g "@anthropic-ai/claude-code@$CLAUDE_CODE"
           claude plugin validate --strict .
           claude plugin test plugins/qua
+          scripts/check-old-host.sh npx -y "@anthropic-ai/claude-code@$OLD_CLAUDE_CODE"
 
-      - name: Tag
+      - name: Commit, tag, push
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ steps.in.outputs.version }}
+          BRANCH: ${{ steps.in.outputs.branch }}
         run: |
-          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null; then
-            echo "::error::tag $VERSION exists"
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -q -m "qua $VERSION"
+          git fetch -q --tags origin
+          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+            if [ "$(git rev-parse "$VERSION^{tree}")" = "$(git rev-parse HEAD^{tree})" ]; then
+              echo "tag $VERSION exists with the same content; nothing to do"
+              exit 0
+            fi
+            echo "::error::tag $VERSION exists with different content ($(git rev-parse "$VERSION^{commit}")); something else tagged this repo, e.g. qua-cli release-plugin.yml. Delete the tag after checking it, then rerun."
             exit 1
           fi
           git tag "$VERSION"
-          git push origin "refs/tags/$VERSION"
+          git push --atomic origin "HEAD:refs/heads/$BRANCH" "refs/tags/$VERSION"

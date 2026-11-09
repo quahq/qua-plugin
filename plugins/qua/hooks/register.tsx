@@ -130,6 +130,9 @@ async function pollLive($: EngineInterface): Promise<void> {
     run = toRun(structuredOf(await read($, 'qua_run_get', { id: newest.id }))) ?? run
   } catch (err) {
     runError = errText(err)
+    // A refused read would ask again on every tick.
+    liveTimer?.cancel()
+    liveTimer = undefined
   }
   $.ui.invalidate('ui.render')
 }

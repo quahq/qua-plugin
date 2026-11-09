@@ -13,13 +13,14 @@ const tools = new Map(
   contract.tools.filter((t) => t.server === 'qua' && t.name).map((t) => [t.name, t]),
 )
 const shipped = [...tools.values()].filter((t) => t.status === 'shipped').map((t) => t.name)
+const proposed = new Set([...tools.values()].filter((t) => t.status === 'proposed').map((t) => t.name))
 
 const skills = Object.fromEntries(
   readdirSync(join(plugin, 'skills')).map((d) => [d, read(`plugins/qua/skills/${d}/SKILL.md`)]),
 )
 
 const bare = /`(qua_[a-z_]+)`/g
-const sig = /`(qua_[a-z_]+)\(([^)]*)\)`/g
+const sig = /`([a-z_]+)\(([^)]*)\)`/g
 const argNames = new Set([...tools.values()].flatMap((t) => t.args.map((a) => a.replace(/\?$/, ''))))
 const fields = new Set(['qua_version', 'qua_env']) // result fields, not tools
 
@@ -45,8 +46,11 @@ test('every shipped qua tool is documented in the qua skill', () => {
 test('every tool a skill names exists in the contract', () => {
   const unknown = []
   for (const [skill, body] of Object.entries(skills))
-    for (const n of named(body)) if (!tools.has(n)) unknown.push(`${skill}: ${n}`)
-  assert.deepEqual(unknown, [])
+    for (const n of named(body)) {
+      const ok = tools.get(n)?.status === 'shipped' || (skill === 'qua' && proposed.has(n))
+      if (!ok) unknown.push(`${skill}: ${n}`)
+    }
+  assert.deepEqual(unknown, [], 'unknown, or proposed outside the qua skill')
 })
 
 test('tool signatures in skills match contract args', () => {
@@ -56,7 +60,10 @@ test('tool signatures in skills match contract args', () => {
     for (const [, n, raw] of body.matchAll(sig)) {
       count++
       const t = tools.get(n)
-      if (!t) continue
+      if (!t) {
+        errs.push(`${skill}: signature for unknown tool ${n}`)
+        continue
+      }
       const spec = new Map(t.args.map((a) => [a.replace(/\?$/, ''), a.endsWith('?')]))
       const listed = new Set()
       for (let a of raw.split(',').map((s) => s.trim()).filter(Boolean)) {
@@ -71,6 +78,8 @@ test('tool signatures in skills match contract args', () => {
   }
   assert.deepEqual(errs, [])
   assert.ok(count >= 7, `found ${count} signatures`)
+  for (const name of ['qua-validate', 'qua-regress'])
+    assert.ok([...skills[name].matchAll(sig)].length > 0, `${name}: no tool signature`)
 })
 
 test('mod calls only contract tools', () => {
@@ -89,8 +98,14 @@ test('hooks.json stays loadable by hosts without mods', () => {
   assert.ok(Array.isArray(h.modules) && h.modules.length === 1)
 })
 
-test('plugin version matches the version qua-init gates on', () => {
-  const v = JSON.parse(read('plugins/qua/.claude-plugin/plugin.json')).version
-  assert.match(v, /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/)
-  assert.ok(skills['qua-init'].includes(`This plugin was built for qua v${v}.`))
+test('qua-init and the manifest name the same qua version', () => {
+  const m = [...skills['qua-init'].matchAll(/^This plugin was built for qua (v\S+)\.$/gm)]
+  assert.equal(m.length, 1)
+  const v = m[0][1]
+  assert.match(v, /^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/)
+  assert.equal(`v${JSON.parse(read('plugins/qua/.claude-plugin/plugin.json')).version}`, v)
+  const pin = `sh -s -- --version ${v}\``
+  const installs = [...skills['qua-init'].matchAll(/`curl -fsSL [^`]*`/g)].map((x) => x[0])
+  assert.ok(installs.length > 0)
+  for (const c of installs) assert.equal(c.endsWith(pin), v.includes('-dev'), c)
 })

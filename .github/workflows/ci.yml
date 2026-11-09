@@ -13,6 +13,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  CLAUDE_CODE: "2.1.318"
+  OLD_CLAUDE_CODE: "2.1.286"
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -27,7 +31,7 @@ jobs:
         run: node --test tests/drift.test.mjs
 
       - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code@latest
+        run: npm install -g "@anthropic-ai/claude-code@$CLAUDE_CODE"
 
       - name: Validate marketplace and plugin
         run: |
@@ -37,6 +41,8 @@ jobs:
       - name: Mod tests
         run: claude plugin test plugins/qua
 
-      # Hosts without mods must still load the plugin (README, "Mods and older hosts").
-      - name: Validate with Claude Code 2.1.286
-        run: npx -y @anthropic-ai/claude-code@2.1.286 plugin validate plugins/qua
+      # A Claude Code without mods must still load skills and the MCP server.
+      - name: Older Claude Code loads the plugin
+        run: |
+          npx -y "@anthropic-ai/claude-code@$OLD_CLAUDE_CODE" plugin validate plugins/qua
+          scripts/check-old-host.sh npx -y "@anthropic-ai/claude-code@$OLD_CLAUDE_CODE"

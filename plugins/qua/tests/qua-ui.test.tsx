@@ -23,7 +23,7 @@ const BAND = {
 // Stubs the engine and the qua server; returns every MCP call the mod made.
 function engine(on: On, servers: string[] = ['plugin:qua:qua'], filled: string[] = []) {
   const calls: { server: string; tool: string; args: Record<string, unknown> }[] = []
-  mock.clock(on, { now: Date.parse('2026-11-09T10:01:00Z') })
+  const clock = mock.clock(on, { now: Date.parse('2026-11-09T10:01:00Z') })
   mock.env(on, {})
   on('command.register', () => ({ value: undefined }) as never)
   on('ui.open', () => ({ value: { isPlaced: true } }))
@@ -49,7 +49,7 @@ function engine(on: On, servers: string[] = ['plugin:qua:qua'], filled: string[]
     }
     return { value: answers[e.tool] ?? { content: [{ type: 'text', text: 'unknown tool' }], isError: true } } as never
   })
-  return calls
+  return Object.assign(calls, { clock })
 }
 
 const READ_ONLY = ['qua_project_get', 'qua_session_list', 'qua_session_logs', 'qua_session_screenshot', 'qua_run_list', 'qua_run_get', 'qua_shot_get']
@@ -180,4 +180,42 @@ test('diff sends a removed integration as null and stages as a whole map', () =>
   const { args, changed } = diffProject(project.project, d)
   expect(changed).toEqual(['stages', 'integrations.source_control'])
   expect(args).toEqual({ stages: { dev: 'http://localhost:5173' }, integrations: { source_control: null } })
+})
+
+test('another server\'s run tool starts no qua band', async ($, on) => {
+  const calls = engine(on)
+  let release = () => {}
+  const held = new Promise<void>(r => (release = r))
+  on('tool.call', async () => {
+    await held
+    return { result: { content: [{ type: 'text', text: 'done' }] } }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const running = $.tool.call({ tool: 'mcp__other__run', suite: 'smoke' } as never)
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  expect(await ui.find({ key: 'band-run' })).toBeUndefined()
+  await calls.clock.advance(3000)
+  expect(calls.length).toBe(0)
+  await ui.unmount()
+  release()
+  await running
+})
+
+test('live polling stops after a refused read', async ($, on) => {
+  const calls = engine(on, [])
+  let release = () => {}
+  const held = new Promise<void>(r => (release = r))
+  on('tool.call', async () => {
+    await held
+    return { result: { content: [{ type: 'text', text: 'done' }] } }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const running = $.tool.call({ tool: 'mcp__plugin_qua_qua__qua_run', suite: 'smoke', case: 'login' })
+  await calls.clock.advance(1500)
+  const first = calls.length
+  expect(first).toBeGreaterThan(0)
+  await calls.clock.advance(6000)
+  expect(calls.length).toBe(first)
+  release()
+  await running
 })
