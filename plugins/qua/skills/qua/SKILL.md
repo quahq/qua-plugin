@@ -20,7 +20,10 @@ Change project data only with `qua_project_set`; never edit `.qua/project.yaml`.
   this agent and suggest `qua init`. Do not improvise with another tool.
 - Omit `agent`; the server uses the agent it runs under. Your agent is the
   `agent:` line of `qua_project_get`.
-- If the instructions say Qua is not configured, tell the user to run `/qua-init`.
+- The startup instructions are a snapshot; if they say Qua was not set up,
+  call `qua_project_get()` first. If the `agent:` value is missing from
+  `agents`, point the user at `qua init --agents <agent>`; else if
+  `configured` is false, at `/qua-init`.
 
 ## Tools
 
