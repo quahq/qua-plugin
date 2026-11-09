@@ -27,8 +27,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Drift test (skills and mod vs contract/tools.json)
-        run: node --test tests/drift.test.mjs
+      - name: Drift and prose tests
+        run: node --test tests/*.test.mjs
 
       - name: Install Claude Code
         run: npm install -g "@anthropic-ai/claude-code@$CLAUDE_CODE"
