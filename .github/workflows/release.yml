@@ -1,0 +1,64 @@
+name: Release
+
+# Tags the plugin with the qua release version (ADR 0010, 0054).
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: qua release tag, e.g. v1.5.0 or v1.5.0-rc.1-dev
+        required: true
+
+concurrency:
+  group: release-${{ inputs.version }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve branch
+        id: branch
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "::error::bad version $VERSION"; exit 1; }
+          if [[ "$VERSION" == *-dev* ]]; then echo "name=dev" >> "$GITHUB_OUTPUT"; else echo "name=main" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.branch.outputs.name }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Version matches
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          got="v$(node -p 'require("./plugins/qua/.claude-plugin/plugin.json").version')"
+          if [ "$got" != "$VERSION" ]; then
+            echo "::error::plugin.json is $got; run scripts/set-version.sh $VERSION in a PR to ${{ steps.branch.outputs.name }} first"
+            exit 1
+          fi
+
+      - name: Checks
+        run: |
+          node --test tests/drift.test.mjs
+          npm install -g @anthropic-ai/claude-code@latest
+          claude plugin validate --strict .
+          claude plugin test plugins/qua
+
+      - name: Tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null; then
+            echo "::error::tag $VERSION exists"
+            exit 1
+          fi
+          git tag "$VERSION"
+          git push origin "refs/tags/$VERSION"

@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Drift test (skills and mod vs contract/tools.json)
+        run: node --test tests/drift.test.mjs
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code@latest
+
+      - name: Validate marketplace and plugin
+        run: |
+          claude plugin validate --strict .
+          claude plugin validate --strict plugins/qua
+
+      - name: Mod tests
+        run: claude plugin test plugins/qua
+
+      # Hosts without mods must still load the plugin (README, "Mods and older hosts").
+      - name: Validate with Claude Code 2.1.286
+        run: npx -y @anthropic-ai/claude-code@2.1.286 plugin validate plugins/qua

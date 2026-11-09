@@ -7,7 +7,7 @@ description: Set up Qua for this project (app URL, stages, integrations by categ
 
 Set up the project data Qua needs. Follow the steps in order and do not skip ahead.
 
-This plugin was built for qua v1.4.0-rc.5-dev.
+This plugin was built for qua v1.4.0.
 
 ## Rules
 
@@ -24,22 +24,22 @@ Do this before anything else. Until it passes, do nothing else: no questions abo
 **No Qua tools available** (no `qua_project_get` or `qua_do` among your tools):
 1. Run `command -v qua` in your shell.
 2. Not found: the binary is not installed. Show these steps and offer to run them; run them only after an explicit yes.
-   - `curl -fsSL https://dl.qua.0xdc.sh/install.sh | sh -s -- --version v1.4.0-rc.5-dev`
+   - `curl -fsSL https://dl.qua.0xdc.sh/install.sh | sh`
    - The script installs to `~/.local/bin` (or `/usr/local/bin`) and prints a `PATH` hint. On macOS a GUI-launched agent often does not inherit the shell `PATH`: add the install directory to `PATH` for login apps, symlink `qua` into a directory GUI apps search (for example `/opt/homebrew/bin`), or start the agent from a terminal where `command -v qua` succeeds.
    Afterwards ask the user to reload the agent and run /qua-init again, then stop.
 3. Found: the binary is installed but this project or agent is not set up. Offer `qua init --agents <agent>` and run it only after a yes. If your agent is `cursor`, also offer `qua patch`, then the user must reload the Agents Window. Running `qua patch` may be blocked by macOS for you: if it fails, ask the user to run it in their own terminal. Afterwards ask the user to reload the agent and run /qua-init again, then stop.
 4. Plugin install without `qua init` (`qua init` writes the same into `.claude/settings.json` for Claude Code):
    - Claude Code: the user runs these.
      ```
-     /plugin marketplace add realdnchka/qua-claude-plugin
+     /plugin marketplace add quahq/qua-plugin
      /plugin install qua@qua
      ```
      `/plugin install` opens the plugin panel, where the user confirms the install.
-   - Cursor imports Claude plugins: in Settings, Plugins, add the marketplace `realdnchka/qua-claude-plugin` and install `qua`, then fully restart Cursor (Cmd+Q).
+   - Cursor imports Claude plugins: in Settings, Plugins, add the marketplace `quahq/qua-plugin` and install `qua`, then fully restart Cursor (Cmd+Q).
 
 **Qua tools available:** call `qua_project_get()` and read `qua_version`. Compare only release versions (`vX.Y.Z`, optionally `-dev.N`): skip the check if either side is `dev`, a Go pseudo-version (`v0.0.0-…`) or ends in `+dirty`. If they differ, tell the user which side is older and how to upgrade it, then ask whether to continue anyway:
 - plugin older: Claude Code: run `/plugin marketplace update qua`, then reload; Cursor: remove the `qua` plugin, add it again from Settings, Plugins, then restart Cursor (it may keep the copy pinned at first install);
-- binary older: run `curl -fsSL https://dl.qua.0xdc.sh/install.sh | sh -s -- --version v1.4.0-rc.5-dev` and reload the agent.
+- binary older: run `curl -fsSL https://dl.qua.0xdc.sh/install.sh | sh` and reload the agent.
 
 Stop unless the versions match or the user says to continue.
 

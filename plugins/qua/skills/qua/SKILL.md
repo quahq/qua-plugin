@@ -27,6 +27,7 @@ Change project data only with `qua_project_set`; never edit `.qua/project.yaml`.
 - `qua_do(action, session, browser?, stage?, target?)` — perform one prose step.
 - `qua_run(suite, session, case?, browser?, stage?)` — run a saved case, or every case in a suite.
 - `qua_explore(session, start?, stage?, max_steps?, max_depth?, max_minutes?, origins?, allow_submit?, browser?)` — walk links, buttons and tabs within limits, grow the UI map, return a report; never `allow_submit` without the user's yes.
+- `qua_explore_status(session)` — progress of the session's running or last explore: steps, map growth, last lines.
 - `qua_review_pick(session, timeout_s?)` — after a `review` step whose result says `review: shown in the window`, wait for the user's pick in the overlay; returns a `map_id` to pass as `target`.
 - `qua_review_view(session)` — widget for a shown review: the user picks a candidate in it. Call it only when the host renders widgets.
 - `qua_runs_view(id?, suite?)`, `qua_map_view(page?, fp?, tab?)`, `qua_cases_view(suite?, name?)` — widgets showing runs, the UI map and saved cases. Call them to show results when widgets render; the text tools stay the source of truth.
@@ -34,6 +35,7 @@ Change project data only with `qua_project_set`; never edit `.qua/project.yaml`.
 - `qua_case_write(suite, name, steps)` — save `.qua/{suite}/{name}.md`.
 - `qua_case_list(suite?)`, `qua_case_get(suite, name)` — read saved cases as JSON.
 - `qua_case_resolved(suite, case)` — a case's resolved-step lock (`.qua/resolved/`) as JSON: per line `resolved`, `stale` and the locked action and target.
+- `qua_generate(suite?, case?, out?, check?)` — render saved cases to Playwright specs under `out`; with `check` it writes nothing and fails on drift. Only when the user asks.
 - `qua_run_list(suite?, status?, limit?, cursor?)`, `qua_run_get(id)` — past case runs as JSON, newest first; `qua_run_get` has each step's status, Jev judgments and screenshots.
 - `qua_map_get(page?, session?)`, `qua_map_state(fp)` — the UI map as JSON: without `page` a page summary, with it the page's states and edges. On a stale map it fails with an error to delete `.qua/map` and learn again: tell the user, do not delete it yourself.
 - `qua_session_list()` — list existing sessions.
@@ -43,10 +45,13 @@ Change project data only with `qua_project_set`; never edit `.qua/project.yaml`.
 - `qua_project_get()` — read project data and whether it is configured.
 - `qua_project_set(app_url?, stages?, qua_env?, integrations?, other?)` — merge a patch into project data.
 - `qua_project_configure(mcps?)` — project, browser and your MCP servers as text and a setup form; used by /qua-init.
+- `qua_mcp_list()` — MCP servers from project and user Qua config (ATE chats): source, status, secret refs only.
+- `qua_mcp_set(name, target, command?, args?, env?, url?, headers?, transport?, enabled?, remove?)` — add, edit or remove one server in the project or user config; secrets only as `${env:NAME}` or `${keychain:NAME}`; only when the user asks. Approval is the human's (ATE Approve or `qua mcp approve` in their terminal), never yours.
 - `qua_ui_probe(echo?)` — diagnostic MCP Apps widget; only when the user asks to test widgets.
 - `qua_browser_detect()` — which Playwright browser a call would attach to, and setup steps when none.
 - `qua_browser_install()` — install the Playwright runtime; only after the user says yes.
 - `qua_browser_start(engine?, profile?)` — start a detached browser you and the user share, or reuse the running one; only after the user says yes.
+- `qua_browser_set(agent, browsers)` — set an agent's configured browsers, default first; used by /qua-init, otherwise only when the user asks.
 - `qua_browser_stop(engine?)` — stop the browsers Qua started; only when the user asks.
 - `qua_init`, `qua_login` — only when the user explicitly asks; both change setup.
 

@@ -1,8 +1,9 @@
 {
   "name": "qua",
+  "version": "1.4.0",
   "description": "Prose-driven browser QA through Qua MCP",
   "author": {
     "name": "Qua"
   },
-  "repository": "https://github.com/realdnchka/qua-cli"
+  "repository": "https://github.com/quahq/qua-plugin"
 }
