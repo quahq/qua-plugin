@@ -34,7 +34,7 @@ jobs:
         env:
           VERSION: ${{ github.event.client_payload.version || inputs.version }}
           CORE: ${{ github.event.client_payload.core || inputs.core }}
-          RELEASE_TOKEN: ${{ secrets.QUA_PLUGIN_RELEASE_TOKEN }}
+          RELEASE_TOKEN: ${{ secrets.QUA_PLUGIN_TOKEN }}
         run: |
           semver='^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
           [[ "$VERSION" =~ $semver ]] || { echo "::error::bad version '$VERSION'"; exit 1; }
@@ -44,7 +44,7 @@ jobs:
             exit 1
           fi
           if [ -z "$RELEASE_TOKEN" ]; then
-            echo "::error::secret QUA_PLUGIN_RELEASE_TOKEN is not set (fine-grained, this repo: Contents and Workflows write)"
+            echo "::error::org secret QUA_PLUGIN_TOKEN is not available (needs Contents and Workflows write on this repo)"
             exit 1
           fi
           { echo "version=$VERSION"; echo "core=$CORE"; } >> "$GITHUB_OUTPUT"
@@ -89,7 +89,7 @@ jobs:
       - name: Commit, tag, push
         env:
           VERSION: ${{ steps.in.outputs.version }}
-          TOKEN: ${{ secrets.QUA_PLUGIN_RELEASE_TOKEN }}
+          TOKEN: ${{ secrets.QUA_PLUGIN_TOKEN }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
