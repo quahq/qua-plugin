@@ -65,10 +65,10 @@ Users install a branch head, not a tag: `qua init` adds the marketplace without 
      -F 'client_payload[version]=vX.Y.Z' -F 'client_payload[core]=<qua-core version in go.mod>'
    ```
 
-   qua-cli sends it for stable tags only; its token needs `contents: write` on this repo. The **Release** workflow (also runnable by hand with the same two inputs) refuses `-dev` versions and stops early without `QUA_PLUGIN_RELEASE_TOKEN`. It checks out `main` without stored credentials, takes the `dev` tree, checks the contract, runs `scripts/set-version.sh`, reruns all checks, commits `qua vX.Y.Z` and pushes `main` and the tag atomically with the token. If the tag already exists with the same tree it does nothing; with a different tree it fails and names the commit (something else tagged the repo).
+   qua-cli sends it for stable tags only; its token needs `contents: write` on this repo. The **Release** workflow (also runnable by hand with the same two inputs) refuses `-dev` versions and stops early without `QUA_PLUGIN_TOKEN`. It checks out `main` without stored credentials, takes the `dev` tree, checks the contract, runs `scripts/set-version.sh`, reruns all checks, commits `qua vX.Y.Z` and pushes `main` and the tag atomically with the token. If the tag already exists with the same tree it does nothing; with a different tree it fails and names the commit (something else tagged the repo).
 
 **Setup (owner):**
-- `QUA_PLUGIN_RELEASE_TOKEN`: fine-grained token on this repo with Contents and Workflows write. `GITHUB_TOKEN` cannot push the workflow files the `dev` tree brings to `main`.
+- `QUA_PLUGIN_TOKEN`: the org secret qua-cli already uses, with Contents and Workflows write on this repo. `GITHUB_TOKEN` cannot push the workflow files the `dev` tree brings to `main`.
 - `release.yml` must exist on `main`, the default branch: GitHub runs `repository_dispatch` and `workflow_dispatch` only from there. A one-time bootstrap PR to `main` adds it; after that each stable release carries `dev`'s copy, so a `release.yml` change on `dev` takes effect after the next stable release.
 - Rulesets for `main` and `v*` tags (only the release actor) are to be created; the repo has none yet.
 
