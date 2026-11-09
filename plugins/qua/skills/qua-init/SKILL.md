@@ -16,6 +16,7 @@ This plugin was built for qua v1.4.0-rc.5-dev.
 - Never ask for, print or store secrets (tokens, passwords, API keys).
 - Never run `qua login`. If Qua reports an auth error, tell the user to run `qua login` in a terminal and stop.
 - Write a file only after the user confirms its shown content.
+- The Qua server's startup instructions are a snapshot from when the session began; when they disagree with `qua_project_get()`, trust `qua_project_get()`.
 
 ## 0. Gate: the qua binary
 
@@ -49,8 +50,8 @@ Stop unless the versions match or the user says to continue.
    qua init --agents <agent>
    ```
 2. Offer to run it in the project root; run it only after an explicit yes.
-3. If the agent is `cursor`, say that Cursor may additionally need `qua patch`, a reload of the Agents Window and a Cursor restart (the hook in `~/.cursor/hooks.json`).
-4. Stop. Do not start step 1 until the user runs /qua-init again.
+3. If the agent is `cursor`, say that Cursor may additionally need `qua patch`, a reload of the Agents Window and a Cursor restart (the hook in `~/.cursor/hooks.json`), then stop. Do not start step 1 until the user runs /qua-init again.
+4. Otherwise, once `qua init` succeeds (yours or the user's), call `qua_project_get()` again: the Qua tools read `.qua` on every call, so no reload is needed. If `initialized` is now true and the agent is in `agents`, continue with the form below in this session; ignore the init note about trusting the folder and running /qua-init. If not, show what is missing and stop.
 
 ## Form: hosts that render MCP Apps
 

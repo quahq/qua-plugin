@@ -70,6 +70,11 @@ test('qua-init gate: manual install and initialized check', () => {
     '```sh\n   qua init --agents <agent>\n   ```', 'explicit yes', 'Do not start step 1',
     'If your agent is `cursor`, also offer `qua patch`', 'If the agent is `cursor`, say that Cursor may additionally need `qua patch`',
   ])
+  has('qua skill rechecks live state', skills['qua'], ['call `qua_project_get()` first', '`qua init --agents <agent>`', 'at `/qua-init`'])
+  has('init continues in session', body, [
+    'call `qua_project_get()` again', 'no reload is needed', 'continue with the form below in this session',
+    'when they disagree with `qua_project_get()`, trust `qua_project_get()`',
+  ])
   assert.ok(!body.includes('qua-cursor'), 'no Cursor-specific plugin')
   assert.ok(body.indexOf('`initialized` and `agents`') < body.indexOf('## 1. Project data'), 'init gate must precede step 1')
 })
