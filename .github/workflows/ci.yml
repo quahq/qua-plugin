@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CLAUDE_CODE: "2.1.318"
+  OLD_CLAUDE_CODE: "2.1.286"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Drift and prose tests
+        run: node --test tests/*.test.mjs
+
+      - name: Install Claude Code
+        run: npm install -g "@anthropic-ai/claude-code@$CLAUDE_CODE"
+
+      - name: Validate marketplace and plugin
+        run: |
+          claude plugin validate --strict .
+          claude plugin validate --strict plugins/qua
+
+      - name: Mod tests
+        run: claude plugin test plugins/qua
+
+      # A Claude Code without mods must still load skills and the MCP server.
+      - name: Older Claude Code loads the plugin
+        run: |
+          npx -y "@anthropic-ai/claude-code@$OLD_CLAUDE_CODE" plugin validate plugins/qua
+          scripts/check-old-host.sh npx -y "@anthropic-ai/claude-code@$OLD_CLAUDE_CODE"
