@@ -97,7 +97,7 @@
       ],
       "args_go": "op.ExploreInput",
       "result_go": "op.ExploreStarted",
-      "result": "{id, session, running, started_at, follow, notes?}; starts the walk in the background and returns at once (hosts drop calls after ~60 s); follow with qua_explore_status until running is false, its report is the outcome; a second explore on the session is refused while one runs; `qua explore` (CLI) still blocks and prints the report",
+      "result": "{id, session, running, started_at, follow, notes?}; starts the walk in the background and returns at once (hosts drop calls after ~60 s); max_minutes is capped at 30; follow with qua_explore_status {session, wait_s: 45} until running is false, its report is the outcome; qua_explore_stop or qua_session_close stops it; while it runs, a second explore and qua_do, qua_run and qua_record (except status) on that session are refused; `qua explore` (CLI) still blocks and prints the report",
       "hints": {
         "readOnly": false,
         "destructive": true,
@@ -279,7 +279,7 @@
       ],
       "args_go": "op.BrowserSessionCloseInput",
       "result_go": "op.SessionCloseResult",
-      "result": "{session, closed, kept?, notes?}; text: closed \u003csession\u003e, kept rows of other owners",
+      "result": "{session, closed, kept?, notes?}; text: closed \u003csession\u003e, kept rows of other owners; a background explore on the session is stopped first",
       "hints": {
         "readOnly": false,
         "destructive": true,
@@ -532,7 +532,7 @@
       "args": [],
       "args_go": "op.ProjectGetInput",
       "result_go": "op.ProjectResult",
-      "result": "{qua_version, agent?, initialized, agents, configured, project, conventions:[{name, path, exists, text}], browsers?, runtime?, mcps?}; project.sources:[{name, path?, repo?, note?, abs_path?, exists}] (0057: abs_path resolved against the project root, exists for a local folder; read by the agent only, never sent upstream); conventions lists bug-report and test-case with their text; text: the same, with one status line per convention and source after the YAML",
+      "result": "{qua_version, agent?, initialized, agents, configured, project, conventions:[{name, path, exists, text}], browsers?, runtime?, mcps?}; project.sources:[{name, path?, repo?, note?, abs_path?, exists}] (0057: abs_path resolved against the project root, exists for a local folder; read by the agent only, never sent upstream); conventions lists bug-report and test-case with their text; a source path that resolves to /, a volume root, the home folder or above it gets no abs_path, exists false and error; text: the same, after the YAML one status line per convention and source and each present convention's text between `--- begin convention \u003cname\u003e ---` and `--- end convention \u003cname\u003e ---` (at most 8000 bytes, the JSON has all)",
       "hints": {
         "readOnly": true,
         "destructive": false,
@@ -598,8 +598,8 @@
         "idempotent": true,
         "openWorld": false
       },
-      "ask": "B",
-      "ask_note": "like qua_project_set; only after the user approved the draft",
+      "ask": "A",
+      "ask_note": "always asks in agent chats; a Save in the Config widget is the user's consent",
       "cli": [
         "qua convention write"
       ],
@@ -1373,7 +1373,8 @@
         "4.7"
       ],
       "widget_calls": [
-        "qua_explore"
+        "qua_explore",
+        "qua_explore_stop"
       ]
     },
     {
@@ -1474,11 +1475,12 @@
       "server": "qua",
       "status": "shipped",
       "args": [
-        "session"
+        "session",
+        "wait_s?"
       ],
       "args_go": "op.ExploreStatusInput",
       "result_go": "op.ExploreStatus",
-      "result": "{id, session, running, started_at, ended_at?, steps, states_before, states_after, edges_before, edges_after, lines, stopped?, error?, report?:{stopped, steps, max_steps, pages:[], states, edges:[], destructive?, session_end?, needs_human?, submit?, external?, errors?, depth_cut?, last_state?, warnings?:[{from,action,target,to,why}]}}; id is new per explore, reset when it starts (matches qua_explore's id); lines are the last 50; after counts are live until ended_at; report is set once a walk ends without error (warnings: edge check, ADR 0056)",
+      "result": "{id, session, running, started_at, ended_at?, steps, states_before, states_after, edges_before, edges_after, lines, stopped?, error?, report?:{stopped, steps, max_steps, pages:[], states, edges:[], destructive?, session_end?, needs_human?, submit?, external?, errors?, depth_cut?, last_state?, warnings?:[{from,action,target,to,why}]}}; id is new per explore, reset when it starts (matches qua_explore's id); lines are the last 50; after counts are live until ended_at; report is set once a walk ends without error or is stopped (stopped: stopped, partial report; warnings: edge check, ADR 0056); wait_s 0 to 50 (default 0) blocks until running is false or wait_s passes",
       "hints": {
         "readOnly": true,
         "destructive": false,
@@ -1490,6 +1492,33 @@
       "app": "explore progress in the map widget",
       "skill": "/qua-explore",
       "decision": null,
+      "matrix_row": [
+        "4.7"
+      ]
+    },
+    {
+      "id": "qua_explore_stop",
+      "name": "qua_explore_stop",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "session"
+      ],
+      "args_go": "op.ExploreStopInput",
+      "result_go": "op.ExploreStopResult",
+      "result": "{session, stopped, detail}; cancels the background explore on the session and waits up to 15 s for it to end; its status then has stopped: stopped and the partial report; stopped false with a detail when none runs, or when it runs in another qua process or as a blocking CLI run",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "B",
+      "ask_note": "like other session writes",
+      "cli": null,
+      "app": "map widget Stop",
+      "skill": "/qua-explore",
+      "decision": "human: stops the walk",
       "matrix_row": [
         "4.7"
       ]

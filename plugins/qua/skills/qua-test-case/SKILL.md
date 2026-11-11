@@ -17,7 +17,7 @@ Turn what the user describes into a test case that follows the project's convent
 
 ## Steps
 
-1. Find the `test-case` entry of `conventions` in the `qua_project_get()` result. When `exists` is true, its `text` is the conventions; if the text is not in the result, read the file at its `path` (`.qua/conventions/test-case.md`). If `exists` is false, say so, suggest `/qua-init` (or offer to draft the conventions here, see Rules), and stop. You may still print a plain-text draft if the user asks for one.
+1. Find the `test-case` entry of `conventions` in the `qua_project_get()` result. When `exists` is true, its `text` is the conventions; if the text is missing or cut short (the text output caps each convention at 8000 bytes), read the file at its `path` (`.qua/conventions/test-case.md`). If `exists` is false, say so, suggest `/qua-init` (or offer to draft the conventions here, see Rules), and stop. You may still print a plain-text draft if the user asks for one.
 2. Read `integrations.test_management` from `qua_project_get()`. If its status is not `connected` or it has no `project` key, say so and suggest `/qua-init`. You may output the draft as text only.
 3. Gather the facts: the behavior under test, preconditions, the user's expected results. Ask one short question for anything essential that is missing. Do not invent behavior.
 4. Draft the case exactly as the conventions describe: title shape, template sections, preconditions, steps with expected results, type, priority and references. Target the saved `project` and `suite`.

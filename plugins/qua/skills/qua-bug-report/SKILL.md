@@ -18,7 +18,7 @@ Turn what the user describes into a bug report that follows the project's conven
 
 ## Steps
 
-1. Find the `bug-report` entry of `conventions` in the `qua_project_get()` result. When `exists` is true, its `text` is the conventions; if the text is not in the result, read the file at its `path` (`.qua/conventions/bug-report.md`). If `exists` is false, say so, suggest `/qua-init` (or offer to draft the conventions here, see Rules), and stop. You may still print a plain-text draft if the user asks for one.
+1. Find the `bug-report` entry of `conventions` in the `qua_project_get()` result. When `exists` is true, its `text` is the conventions; if the text is missing or cut short (the text output caps each convention at 8000 bytes), read the file at its `path` (`.qua/conventions/bug-report.md`). If `exists` is false, say so, suggest `/qua-init` (or offer to draft the conventions here, see Rules), and stop. You may still print a plain-text draft if the user asks for one.
 2. Read `integrations.issue_tracker` from `qua_project_get()`. If its status is not `connected` or it has no `project` key, say so and suggest `/qua-init`. You may output the draft as text only.
 3. Gather the facts from the user's message: what happened, expected result, steps, environment or stage, evidence. Ask one short question for anything essential that is missing. Do not invent steps, versions or results.
    - If the bug was seen in a Qua session (the user names one, or one was just used here), call `qua_session_logs` with `kind` error and with `kind` network, and offer the relevant lines as evidence in the draft. Ask which session if unclear.
