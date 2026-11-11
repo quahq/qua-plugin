@@ -48,7 +48,7 @@ note). You may read them; never put code, paths or notes into `qua_do`,
 - `qua_session_logs(session, tail?, kind?)` — console, page errors, failed requests and Qua errors of a session window (`kind`: console, error, network, all).
 - `qua_session_screenshot(session, full_page?, label?)` — capture the session window now; returns the saved path (`.qua/screenshots/<session>/`) and the image. Cursor tabs need the Agents Window visible (not minimized).
 - `qua_session_close(session)` — only when the user asks to clean up.
-- `qua_project_get()` — read project data and whether it is configured.
+- `qua_project_get()` — read project data and whether it is configured; `conventions` holds the bug-report and test-case conventions with their `text`.
 - `qua_project_set(app_url?, stages?, qua_env?, sources?, integrations?, other?)` — merge a patch into project data; `sources` (code folders and repos) replaces the whole list.
 - `qua_convention_write(name, text)` — save the `bug-report` or `test-case` conventions (`.qua/conventions/<name>.md`) after the user approves the shown draft.
 - `qua_project_configure(mcps?)` — project, browser and your MCP servers as text and a setup form; used by /qua-init.

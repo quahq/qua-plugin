@@ -175,7 +175,7 @@ Draft the file in exactly this shape. Keep every heading, in this order. Use the
 <priority ladder and when each applies>
 ```
 
-Show the full draft in chat and ask whether to save it. Only after an explicit yes, call `qua_convention_write` with `name` `bug-report` and `text` the whole draft, header line included. If the user asks for edits, redraft and ask again. If the user declines, save nothing and offer to redraft.
+On a re-run, the current text is the `bug-report` entry of `conventions` in `qua_project_get()`; redraft only if the user wants to. Show the full draft in chat and ask whether to save it. Only after an explicit yes, call `qua_convention_write` with `name` `bug-report` and `text` the whole draft, header line included. If the user asks for edits, redraft and ask again. If the user declines, save nothing and offer to redraft.
 
 ## 7. Test-case conventions
 
