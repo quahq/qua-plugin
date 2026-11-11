@@ -14,6 +14,7 @@ Validate one ticket live. The text after the command is the ticket key or URL, f
 - Call `qua_project_get()` first. If `configured` is false, stop and tell the user to run `/qua-init`.
 - The issue tracker is read-only. Never comment, transition or edit the ticket without a separate, explicit yes after the verdict.
 - Never edit `.qua/project.yaml` and never handle secrets.
+- Source code (`project.sources` of `qua_project_get`) may help find the route and the expected behaviour. The verdict rests on live evidence only; code findings go in a separate "Likely cause" line. Never put code, paths or source notes into `qua_do` or `qua_case_write`.
 
 ## Steps
 
@@ -27,5 +28,6 @@ Validate one ticket live. The text after the command is the ticket key or URL, f
    - Evidence: the steps you ran, each step's status, the observed result against the expected one, and the session name.
    - Screenshots: list the repo-relative path of the `verdict` capture and of every `screenshot:` path a `failed` or `review` step returned. Show them to the user.
    - For `blocked`: what stopped you.
+   - Likely cause (optional, separate from the verdict): what the sources suggest, with file paths.
    - Once a session exists, for `reproduced` and `blocked`: call `qua_session_logs` with `kind` error and, if it shows anything, with `kind` network. Add only the lines relevant to the check to Evidence, no full dumps. Skip it for `not reproduced` unless errors appeared.
 6. Offer, but do not do, an issue tracker comment. Write to the issue tracker only after a separate explicit yes.

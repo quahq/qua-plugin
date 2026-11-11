@@ -107,3 +107,27 @@ test('qua-automate shape', () => {
     'own test command', 'Generated:', 'Reused:', 'Open:',
   ])
 })
+
+test('conventions are saved only through qua_convention_write (qua-ate#49)', () => {
+  for (const name of ['qua-init', 'qua-bug-report', 'qua-test-case']) {
+    has(name, skills[name], ['`qua_convention_write(name, text)`', '`.qua/conventions/'])
+    assert.doesNotMatch(skills[name], /Write the file|write the file/, `${name}: conventions as a file write`)
+  }
+  has('init names', skills['qua-init'], ['`name` `bug-report`', '`name` `test-case`'])
+  assert.ok(!skills.qua.includes('`.qua/conventions/*.md`'), 'qua: conventions listed as files to write')
+})
+
+test('sources: init step and the no-code-in-steps rule (ADR 0057)', () => {
+  const init = skills['qua-init']
+  has('init sources', init, ['## 2. Source code', '`sources` replaces the whole list', 'Never clone or fetch'])
+  assert.ok(init.indexOf('## 1. Project data') < init.indexOf('## 2. Source code'))
+  for (const name of ['qua', 'qua-init', 'qua-validate', 'qua-bug-report', 'qua-explore', 'qua-automate'])
+    assert.match(skills[name], /[Nn]ever put code, paths or (source )?notes into `qua_do`/, `${name}: missing sources rule`)
+  has('validate', skills['qua-validate'], ['live evidence only', 'Likely cause'])
+  has('bug-report', skills['qua-bug-report'], ['suspected-area line'])
+  has('automate', skills['qua-automate'], ['outside the project root needs the user\'s yes'])
+})
+
+test('qua-explore follows the background walk with qua_explore_status', () => {
+  has('explore', skills['qua-explore'], ['returns at once', '`qua_explore_status(session)`', 'until `running` is false', '`report`'])
+})

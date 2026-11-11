@@ -42,7 +42,7 @@ The drift test fails when:
 - a backticked `tool(args)` signature names an unknown tool or disagrees with the contract's args; `qua-validate` and `qua-regress` must carry one;
 - `/qua-init` names no single version or one other than `plugin.json`, or its install command does not match the channel.
 
-The prose test keeps rules the generator's tests guarded: the `/qua-init` gate before step 1 and the "If Qua tools are missing" preface in every command (ADR 0010), frontmatter, init conventions and probes, validate's blocked rule, automate's shape. CI runs the checks above, then `claude plugin validate` and `scripts/check-old-host.sh` with Claude Code 2.1.286 (the last without mods). Claude Code versions are pinned in the workflows (`CLAUDE_CODE`, `OLD_CLAUDE_CODE`).
+The prose test keeps rules the generator's tests guarded: the `/qua-init` gate before step 1 and the "If Qua tools are missing" preface in every command (ADR 0010), frontmatter, init conventions and probes, validate's blocked rule, automate's shape, conventions saved only through `qua_convention_write`, the `sources` rules ([ADR 0057](https://github.com/quahq/qua-decisions/blob/main/0057-project-sources.md)) and explore followed by `qua_explore_status`. CI runs the checks above, then `claude plugin validate` and `scripts/check-old-host.sh` with Claude Code 2.1.286 (the last without mods). Claude Code versions are pinned in the workflows (`CLAUDE_CODE`, `OLD_CLAUDE_CODE`).
 
 ## Versions and channels
 
