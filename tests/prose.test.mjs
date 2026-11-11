@@ -129,5 +129,10 @@ test('sources: init step and the no-code-in-steps rule (ADR 0057)', () => {
 })
 
 test('qua-explore follows the background walk with qua_explore_status', () => {
-  has('explore', skills['qua-explore'], ['returns at once', '`qua_explore_status(session)`', 'until `running` is false', '`report`'])
+  has('explore', skills['qua-explore'], ['returns at once', '`qua_explore_status(session, wait_s?)`', '`wait_s` 45', 'until `running` is false', '`report`', '`qua_explore_stop(session)`'])
+  assert.doesNotMatch(skills['qua-explore'], /after each answer/, 'explore: busy polling')
+})
+
+test('qua-init file writes stay optional for light chats', () => {
+  has('init suite tags', skills['qua-init'], ['Optional, and the only step that writes a file', 'Skip it when you cannot edit files'])
 })

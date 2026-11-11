@@ -86,7 +86,7 @@ Folders and repos holding the app's code, which you and other agents may read to
   - `repo`: `owner/name` or a git URL without credentials.
   - `note`: up to 500 characters. At most 20 entries.
 - Show the list and save it after a yes with one `qua_project_set` call: `sources` replaces the whole list, `[]` clears it.
-- `exists: false` is not an error (the folder may live elsewhere on other machines); tell the user.
+- `exists: false` without `error` is not an error (the folder may live elsewhere on other machines); tell the user. An `error` on an entry means it is invalid: show it and fix the entry with the user.
 - A `repo` without a local `path` is read through the `source_control` tools when they serve it; otherwise there is no local copy. Never clone or fetch.
 
 If the user has no sources, skip this step.
@@ -175,7 +175,7 @@ Draft the file in exactly this shape. Keep every heading, in this order. Use the
 <priority ladder and when each applies>
 ```
 
-On a re-run, the current text is the `bug-report` entry of `conventions` in `qua_project_get()`; redraft only if the user wants to. Show the full draft in chat and ask whether to save it. Only after an explicit yes, call `qua_convention_write` with `name` `bug-report` and `text` the whole draft, header line included. If the user asks for edits, redraft and ask again. If the user declines, save nothing and offer to redraft.
+On a re-run, the current text is the `bug-report` entry of `conventions` in `qua_project_get()` (or the file at its `path`); redraft only if the user wants to. Show the full draft in chat and ask whether to save it. Only after an explicit yes, call `qua_convention_write` with `name` `bug-report` and `text` the whole draft, header line included. If the user asks for edits, redraft and ask again. If the user declines, save nothing and offer to redraft.
 
 ## 7. Test-case conventions
 
@@ -203,6 +203,8 @@ Use this shape, same rules as step 6 (`source=<provider>` of the test management
 Show the draft, then save it with `qua_convention_write` (`name` `test-case`) only after an explicit yes.
 
 ## 8. Suite stage tags
+
+Optional, and the only step that writes a file. Skip it when you cannot edit files (a Qua app light chat): tell the user suites stay untagged and they can tag them later from a chat or editor that can write files, by adding `.qua/<suite>/suite.yaml` as below.
 
 List the suite directories in `.qua/` (directories holding case `*.md` files; skip `conventions` and `runs`). If there are any, offer to tag suites with the stages they apply to. For each suite the user agrees to, write `.qua/<suite>/suite.yaml`:
 
