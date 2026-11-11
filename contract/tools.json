@@ -96,8 +96,8 @@
         "start?"
       ],
       "args_go": "op.ExploreInput",
-      "result_go": "op.ExploreResult",
-      "result": "{stopped, steps, max_steps, pages:[], states, edges:[], destructive?, session_end?, needs_human?, submit?, external?, errors?, depth_cut?, last_state?, notes?}; text: the same report; progress notifications",
+      "result_go": "op.ExploreStarted",
+      "result": "{id, session, running, started_at, follow, notes?}; starts the walk in the background and returns at once (hosts drop calls after ~60 s); max_minutes is capped at 30; follow with qua_explore_status {session, wait_s: 45} until running is false, its report is the outcome; qua_explore_stop or qua_session_close stops it; while it runs, a second explore and qua_do, qua_run and qua_record (except status) on that session are refused; `qua explore` (CLI) still blocks and prints the report",
       "hints": {
         "readOnly": false,
         "destructive": true,
@@ -279,7 +279,7 @@
       ],
       "args_go": "op.BrowserSessionCloseInput",
       "result_go": "op.SessionCloseResult",
-      "result": "{session, closed, kept?, notes?}; text: closed \u003csession\u003e, kept rows of other owners",
+      "result": "{session, closed, kept?, notes?}; text: closed \u003csession\u003e, kept rows of other owners; a background explore on the session is stopped first",
       "hints": {
         "readOnly": false,
         "destructive": true,
@@ -532,7 +532,7 @@
       "args": [],
       "args_go": "op.ProjectGetInput",
       "result_go": "op.ProjectResult",
-      "result": "{qua_version, agent?, initialized, agents, configured, project, browsers?, runtime?, mcps?}; text: the same",
+      "result": "{qua_version, agent?, initialized, agents, configured, project, conventions:[{name, path, exists, text}], browsers?, runtime?, mcps?}; project.sources:[{name, path?, repo?, note?, abs_path?, exists}] (0057: abs_path resolved against the project root, exists for a local folder; read by the agent only, never sent upstream); conventions lists bug-report and test-case with their text; a source path that resolves to /, a volume root, the home folder or above it gets no abs_path, exists false and error; text: the same, after the YAML one status line per convention and source and each present convention's text between `--- begin convention \u003cname\u003e ---` and `--- end convention \u003cname\u003e ---` (at most 8000 bytes, the JSON has all)",
       "hints": {
         "readOnly": true,
         "destructive": false,
@@ -558,11 +558,12 @@
         "integrations?",
         "other?",
         "qua_env?",
+        "sources?",
         "stages?"
       ],
       "args_go": "op.ProjectSetInput",
       "result_go": "op.ProjectResult",
-      "result": "{qua_version, agent?, initialized, agents, configured, project, browsers?, runtime?, mcps?}; text: merged project.yaml",
+      "result": "{qua_version, agent?, initialized, agents, configured, project, conventions, browsers?, runtime?, mcps?}; text: merged project.yaml; sources [{name, path?, repo?, note?}] replaces the list, [] clears it (0057): name a unique slug, path or repo required, no /, home folder, ~user or URL credentials, note up to 500 characters, at most 20",
       "hints": {
         "readOnly": false,
         "destructive": true,
@@ -580,6 +581,36 @@
       ]
     },
     {
+      "id": "qua_convention_write",
+      "name": "qua_convention_write",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "name",
+        "text"
+      ],
+      "args_go": "op.ConventionWriteInput",
+      "result_go": "op.ConventionWriteResult",
+      "result": "{name, path, bytes}; replaces .qua/conventions/\u003cname\u003e.md (name bug-report or test-case) atomically; CRLF becomes LF; the `\u003c!-- qua:conventions generated=YYYY-MM-DD --\u003e` header is added when the text lacks one; at most 32 KB; read the text back with qua_project_get conventions",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "A",
+      "ask_note": "always asks in agent chats; a Save in the Config widget is the user's consent",
+      "cli": [
+        "qua convention write"
+      ],
+      "app": "config widget conventions",
+      "skill": "/qua-init",
+      "decision": "LLM: drafts from tracker examples; human: approves the draft",
+      "matrix_row": [
+        "1.4"
+      ]
+    },
+    {
       "id": "qua_project_configure",
       "name": "qua_project_configure",
       "server": "qua",
@@ -589,7 +620,7 @@
       ],
       "args_go": "op.ProjectConfigureInput",
       "result_go": "op.ProjectConfigureResult",
-      "result": "{qua_version, agent?, initialized, agents, configured, project, browsers?, runtime?, mcps?} + ui://qua/config.html widget; every agent with its browsers",
+      "result": "{qua_version, agent?, initialized, agents, configured, project, conventions, browsers?, runtime?, mcps?} + ui://qua/config.html widget; every agent with its browsers; project.sources and conventions as in qua_project_get",
       "hints": {
         "readOnly": true,
         "destructive": false,
@@ -607,7 +638,8 @@
       "widget_calls": [
         "qua_project_set",
         "qua_browser_set",
-        "qua_mcp_set"
+        "qua_mcp_set",
+        "qua_convention_write"
       ]
     },
     {
@@ -643,7 +675,7 @@
       "args": [],
       "args_go": "op.MCPListInput",
       "result_go": "op.MCPList",
-      "result": "{project, project_file, user_file, servers:[{name, source, status, reason?, transport?, command?, args?, url?, env?, headers?, refs?, overrides?, hash?}], problems?}; status approved|needs_approval|disabled|skipped; env and headers hold refs, never values",
+      "result": "{project, project_file, user_file, servers:[{name, source, status, reason?, transport?, command?, args?, url?, env?, headers?, refs?, overrides?, hash?, auth, auth_status?}], problems?}; status approved|needs_approval|disabled|skipped; auth none|oauth, auth_status ok|expired|required for oauth; env and headers hold refs, or *** for user-file literals; secret-looking args are masked for user servers only, project servers show real args (0055); never values",
       "hints": {
         "readOnly": true,
         "destructive": false,
@@ -680,7 +712,7 @@
       ],
       "args_go": "op.MCPSetInput",
       "result_go": "op.MCPSetResult",
-      "result": "{target, file, name, removed?, server?}; env and headers take refs only, literals rejected; project servers then need a human approval",
+      "result": "{target, file, name, removed?, server?}; env and headers take refs only for both targets, literals rejected (the model would see them, 0055); a user entry with literals takes only an enabled change; project servers then need a human approval",
       "hints": {
         "readOnly": false,
         "destructive": true,
@@ -688,7 +720,7 @@
         "openWorld": false
       },
       "ask": "A",
-      "ask_note": "target user runs without approval (0051 answer 5)",
+      "ask_note": "target user runs without approval (0051 answer 5); the CLI twin also takes literals for target user (0055)",
       "cli": [
         "qua mcp set"
       ],
@@ -775,12 +807,87 @@
       ]
     },
     {
+      "id": "cli_mcp_add",
+      "name": null,
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "result": "{target, file, written:[name], skipped:[{name, reason}], notes:[{name, note}], servers:[op.MCPServerView, values masked]}; reads an mcpServers snippet on stdin; literals only for target user (0055)",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "A",
+      "ask_note": "human only, never an MCP tool (0035); the snippet may hold secrets",
+      "cli": [
+        "qua mcp add",
+        "qua mcp remove"
+      ],
+      "app": "ATE Config Add server (0055)",
+      "skill": null,
+      "decision": "human: pastes the server and its values",
+      "matrix_row": [
+        "1.10"
+      ]
+    },
+    {
+      "id": "cli_mcp_probe",
+      "name": null,
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "result": "{name, status ok|unreachable|auth_required|skipped, oauth, tools?, error?}; --all: {project, servers:[...]}, 4 at a time under one deadline (default 60s); MCP initialize + tools/list on approved and user servers only (0055)",
+      "hints": {
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": false,
+        "openWorld": false
+      },
+      "ask": "C",
+      "cli": [
+        "qua mcp probe"
+      ],
+      "app": "ATE Config server status, Authorize button (0055)",
+      "skill": null,
+      "decision": null,
+      "matrix_row": [
+        "1.10"
+      ]
+    },
+    {
+      "id": "cli_mcp_auth",
+      "name": null,
+      "server": "qua",
+      "status": "shipped",
+      "args": [],
+      "result": "{name, status, auth_status, expires_at?, config_updated}; --logout: {name, removed}; MCP OAuth (PRM, AS metadata, DCR, PKCE, loopback); tokens in the Keychain or ~/.qua/mcp-oauth.json, never printed",
+      "hints": {
+        "readOnly": false,
+        "destructive": true,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "A",
+      "ask_note": "human only, never an MCP tool (0035, 0055); the ATE Authorize button runs it",
+      "cli": [
+        "qua mcp auth"
+      ],
+      "app": "ATE Config Authorize (0055)",
+      "skill": null,
+      "decision": "human: signs in in the browser",
+      "matrix_row": [
+        "1.10"
+      ]
+    },
+    {
       "id": "cli_mcp_resolved",
       "name": null,
       "server": "qua",
       "status": "shipped",
       "args": [],
-      "result": "{project, servers:[ACP McpServer + source, type; secret values resolved], skipped:[{name, source, status, reason, line}], problems?}; ATE only, hidden, never an MCP tool",
+      "result": "{project, servers:[ACP McpServer + source, type; secret values resolved, OAuth bearer refreshed and injected], skipped:[{name, source, status, reason, line}], problems?}; oauth_min_expires_at? (earliest injected token expiry); status auth_required when the OAuth token is missing or did not refresh; ATE only, hidden, never an MCP tool",
       "hints": {
         "readOnly": true,
         "destructive": false,
@@ -1158,7 +1265,7 @@
       ],
       "args_go": "op.MapGetInput",
       "result_go": "op.MapGraph",
-      "result": "{source, pages:[{id,route,page_type,title,state_count,states?:[{fp,parent?,kind,url?,title?,summary?,dialog?,name,has_shot?}]}], edges?, edge_count, current?, last_states?:[{session,fp,kind?,at?}]}; states and edges only with page; last_states only without session",
+      "result": "{source, pages:[{id,route,page_type,title,state_count,states?:[{fp,parent?,kind,url?,title?,summary?,dialog?,name,has_shot?,layers?:[{kind,region?,name?,owner}],unconfirmed?}]}], edges?:[{id,from,to,kind,action,map_id?,structural_key,edge_source?,count,last_seen?,chrome_item?}], edge_count, current?, last_states?:[{session,fp,kind?,at?}], chrome?:{pages_total,blocks:[{id,landmark,position?,decision?,region?,by?,repeats_on_pages,sample?}],states:[state]}, start?, warnings?:[{from,action,target,to,why}]}; map v3 (ADR 0056): pages exclude the chrome; chrome, start and warnings regardless of page or session, omitted when empty; chrome_item marks an edge whose target is a chrome control (an entry point); states and edges only with page; last_states only without session",
       "hints": {
         "readOnly": true,
         "destructive": false,
@@ -1187,7 +1294,7 @@
       ],
       "args_go": "op.MapStateInput",
       "result_go": "op.MapStateDetail",
-      "result": "{source, fp, alias?, page, parent?, kind, url?, title?, summary?, dialog?, name, has_shot?, shot?, elements, classified}",
+      "result": "{source, fp, alias?, page, parent?, kind, url?, title?, summary?, dialog?, name, has_shot?, layers?, unconfirmed?, shot?, elements, classified}; page is chrome for a chrome state",
       "hints": {
         "readOnly": true,
         "destructive": false,
@@ -1266,7 +1373,8 @@
         "4.7"
       ],
       "widget_calls": [
-        "qua_explore"
+        "qua_explore",
+        "qua_explore_stop"
       ]
     },
     {
@@ -1367,11 +1475,12 @@
       "server": "qua",
       "status": "shipped",
       "args": [
-        "session"
+        "session",
+        "wait_s?"
       ],
       "args_go": "op.ExploreStatusInput",
       "result_go": "op.ExploreStatus",
-      "result": "{id, session, running, started_at, ended_at?, steps, states_before, states_after, edges_before, edges_after, lines, stopped?, error?}; id is new per explore, reset when it starts; lines are the last 50; after counts are live until ended_at",
+      "result": "{id, session, running, started_at, ended_at?, steps, states_before, states_after, edges_before, edges_after, lines, stopped?, error?, report?:{stopped, steps, max_steps, pages:[], states, edges:[], destructive?, session_end?, needs_human?, submit?, external?, errors?, depth_cut?, last_state?, warnings?:[{from,action,target,to,why}]}}; id is new per explore, reset when it starts (matches qua_explore's id); lines are the last 50; after counts are live until ended_at; report is set once a walk ends without error or is stopped (stopped: stopped, partial report; warnings: edge check, ADR 0056); wait_s 0 to 50 (default 0) blocks until running is false or wait_s passes",
       "hints": {
         "readOnly": true,
         "destructive": false,
@@ -1381,8 +1490,35 @@
       "ask": "C",
       "cli": null,
       "app": "explore progress in the map widget",
-      "skill": null,
+      "skill": "/qua-explore",
       "decision": null,
+      "matrix_row": [
+        "4.7"
+      ]
+    },
+    {
+      "id": "qua_explore_stop",
+      "name": "qua_explore_stop",
+      "server": "qua",
+      "status": "shipped",
+      "args": [
+        "session"
+      ],
+      "args_go": "op.ExploreStopInput",
+      "result_go": "op.ExploreStopResult",
+      "result": "{session, stopped, detail}; cancels the background explore on the session and waits up to 15 s for it to end; its status then has stopped: stopped and the partial report; stopped false with a detail when none runs, or when it runs in another qua process or as a blocking CLI run",
+      "hints": {
+        "readOnly": false,
+        "destructive": false,
+        "idempotent": true,
+        "openWorld": false
+      },
+      "ask": "B",
+      "ask_note": "like other session writes",
+      "cli": null,
+      "app": "map widget Stop",
+      "skill": "/qua-explore",
+      "decision": "human: stops the walk",
       "matrix_row": [
         "4.7"
       ]

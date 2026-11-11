@@ -13,10 +13,11 @@ Turn what the user describes into a test case that follows the project's convent
 - Call `qua_project_get()` first. If `configured` is false, stop and tell the user to run `/qua-init`.
 - Never write to test management before an explicit yes to the full draft shown in chat.
 - Never edit `.qua/project.yaml` and never handle secrets.
+- Save conventions only with `qua_convention_write(name, text)`, never by creating or editing `.qua/conventions/` files. If the user asks to create or change the conventions here, draft the whole file in the `/qua-init` shape (header line `<!-- qua:conventions source=<provider|example> generated=YYYY-MM-DD -->` and every heading), show it, and save it with `name` `test-case` only after an explicit yes.
 
 ## Steps
 
-1. Read `.qua/conventions/test-case.md`. If it does not exist, say so, suggest `/qua-init`, and stop. You may still print a plain-text draft if the user asks for one.
+1. Find the `test-case` entry of `conventions` in the `qua_project_get()` result. When `exists` is true, its `text` is the conventions; if the text is missing or cut short (the text output caps each convention at 8000 bytes), read the file at its `path` (`.qua/conventions/test-case.md`). If `exists` is false, say so, suggest `/qua-init` (or offer to draft the conventions here, see Rules), and stop. You may still print a plain-text draft if the user asks for one.
 2. Read `integrations.test_management` from `qua_project_get()`. If its status is not `connected` or it has no `project` key, say so and suggest `/qua-init`. You may output the draft as text only.
 3. Gather the facts: the behavior under test, preconditions, the user's expected results. Ask one short question for anything essential that is missing. Do not invent behavior.
 4. Draft the case exactly as the conventions describe: title shape, template sections, preconditions, steps with expected results, type, priority and references. Target the saved `project` and `suite`.

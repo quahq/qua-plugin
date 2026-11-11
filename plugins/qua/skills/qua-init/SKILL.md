@@ -1,6 +1,6 @@
 ---
 name: qua-init
-description: Set up Qua for this project (app URL, stages, integrations by category, and bug-report and test-case conventions). Use when the user asks to initialize or reconfigure Qua, or when /qua-init is run.
+description: Set up Qua for this project (app URL, stages, source code folders and repos, integrations by category, and bug-report and test-case conventions). Use when the user asks to initialize or reconfigure Qua, or when /qua-init is run.
 ---
 
 # /qua-init
@@ -12,10 +12,12 @@ This plugin was built for qua v1.4.0-rc.5-dev.
 ## Rules
 
 - After step 0 passes, call `qua_project_get()` and show the current values. On a re-run, change only what the user confirms.
-- Save project data only with `qua_project_set(app_url?, stages?, qua_env?, integrations?, other?)`. Never edit `.qua/project.yaml` by hand.
+- Save project data only with `qua_project_set(app_url?, stages?, qua_env?, sources?, integrations?, other?)`. Never edit `.qua/project.yaml` by hand.
+- Save conventions only with `qua_convention_write(name, text)`. Never create or edit `.qua/conventions/` files yourself.
+- Never put code, paths or source notes into `qua_do`, `qua_case_write` or explore text.
 - Never ask for, print or store secrets (tokens, passwords, API keys).
 - Never run `qua login`. If Qua reports an auth error, tell the user to run `qua login` in a terminal and stop.
-- Write a file only after the user confirms its shown content.
+- Save conventions or write a file only after the user confirms its shown content.
 - The Qua server's startup instructions are a snapshot from when the session began; when they disagree with `qua_project_get()`, trust `qua_project_get()`.
 
 ## 0. Gate: the qua binary
@@ -59,7 +61,7 @@ Right after step 0 passes, list every MCP server you have, Qua included, each wi
 
 - The result starts with `widget: offered`: the host may still not render it (Cursor's Agents Window does not). Ask in one line: "If you see the setup form, fill it in; if not, say so and we continue here." Do not ask the step 1 questions yet. When the user answers:
   - It lists `qua_project_set` or `qua_browser_set` arguments because the form could not save: call each with exactly those arguments.
-  - Then continue with step 2 (browser), step 3 only for the categories the message names as still to probe (skip `other`, the form saved it), and steps 4 to 7.
+  - Then continue with step 2 (source code; if the form saved sources, only show them), step 3 (browser), step 4 only for the categories the message names as still to probe (skip `other`, the form saved it), and steps 5 to 8.
   - If the user says there is no form, follow the text steps from step 1.
 - The result starts with `widget: not shown`: the text holds the same data; follow the steps below from step 1.
 
@@ -72,7 +74,24 @@ Ask for:
 
 Save them in one `qua_project_set` call: `app_url`, `stages` (the whole map), `qua_env`.
 
-## 2. Browser
+## 2. Source code
+
+Folders and repos holding the app's code, which you and other agents may read to validate, report and automate. Qua itself never reads or sends them. `qua_project_get()` lists the saved ones in `project.sources`, each with `abs_path` and `exists`; show them first.
+
+- Offer the project root (`path: "."`) when it holds the app's code, and the `source_control` repo (`integrations.source_control.keys.repo`) when one is saved.
+- Ask for more folders or repos, and for each a short note on what it is, for example "web frontend", "API", "e2e tests (Playwright)".
+- Each entry is `{name, path?, repo?, note?}` with `path` or `repo` or both:
+  - `name`: lowercase letters, digits, `-`, `_`; unique.
+  - `path`: relative to the project root (preferred, for example `../web`), `~/…` or absolute. Never `/` or the home folder itself.
+  - `repo`: `owner/name` or a git URL without credentials.
+  - `note`: up to 500 characters. At most 20 entries.
+- Show the list and save it after a yes with one `qua_project_set` call: `sources` replaces the whole list, `[]` clears it.
+- `exists: false` without `error` is not an error (the folder may live elsewhere on other machines); tell the user. An `error` on an entry means it is invalid: show it and fix the entry with the user.
+- A `repo` without a local `path` is read through the `source_control` tools when they serve it; otherwise there is no local copy. Never clone or fetch.
+
+If the user has no sources, skip this step.
+
+## 3. Browser
 
 Your agent's browsers are in `.qua/config.yaml`, default first: `ide` (the Qua app browser; it needs the Qua app open on this project), `playwright`, `cursor` (Cursor bridge). To change them, ask the user which ones and the default, and on yes call `qua_browser_set(agent, browsers)` (the form does this on Save).
 
@@ -88,7 +107,7 @@ Check `runtime:` first. If the Playwright runtime is missing, explain that Qua n
 
 Continue to the next step either way.
 
-## 3. Probe integrations
+## 4. Probe integrations
 
 Integrations are probed by category. Qua is required and needs no confirmation; the rest are optional. For the optional categories, show your provider guesses in one list and ask once to confirm or change them. A provider picked in the form or already saved counts as confirmed: say so, then probe. Run one cheap read-only probe per category, say what you probed (repo, user, space), and record the result. Tool names differ per server, so pick the tool that does the job.
 
@@ -113,20 +132,20 @@ If the Qua probe fails, stop and tell the user to run `qua login`.
 
 Every other MCP server you have (for example Figma or Slack) that fits no category: save its lowercase name in `other` through `qua_project_set` (send the whole list). Do not call any of its tools.
 
-## 4. Category keys
+## 5. Category keys
 
 For each category that is `connected`, ask for its keys and check you can read them through the provider's tools. Save them under `integrations.<category>.keys`, keeping the existing `provider` and `status`:
 
-- `source_control`: `repo` (for example `owner/name`);
+- `source_control`: `repo` (for example `owner/name`); if it is not in `sources` yet, offer to add it (step 2);
 - `issue_tracker`: `project` (the project or team key, for example `ADSAI`);
 - `test_management`: `project` and `suite` (ids or names as the provider shows them);
 - `knowledge_base`: `space`.
 
 No other keys are accepted. Skip silently any category that is not `connected`; if none is, skip this step.
 
-## 5. Bug-report conventions
+## 6. Bug-report conventions
 
-Target file: `.qua/conventions/bug-report.md`. The conventions come from the issue tracker, whatever the provider.
+Saved as `.qua/conventions/bug-report.md` by `qua_convention_write` with `name` `bug-report`. The conventions come from the issue tracker, whatever the provider.
 
 - If `issue_tracker` is `connected`: read the last 20 bugs of the saved project. If the provider is Jira, search with JQL `project = KEY AND issuetype = Bug ORDER BY created DESC`, 20 results. Otherwise use the last 20 bugs via the tracker's search. From them derive the summary shape, the description template, the fields in use, labels, components and the priority ladder.
 - Otherwise ask the user for one example bug report and derive the same from it.
@@ -156,16 +175,16 @@ Draft the file in exactly this shape. Keep every heading, in this order. Use the
 <priority ladder and when each applies>
 ```
 
-Show the full draft in chat and ask whether to save it. Write the file only after an explicit yes. If the user asks for edits, redraft and ask again. If the user declines, write nothing and offer to redraft.
+On a re-run, the current text is the `bug-report` entry of `conventions` in `qua_project_get()` (or the file at its `path`); redraft only if the user wants to. Show the full draft in chat and ask whether to save it. Only after an explicit yes, call `qua_convention_write` with `name` `bug-report` and `text` the whole draft, header line included. If the user asks for edits, redraft and ask again. If the user declines, save nothing and offer to redraft.
 
-## 6. Test-case conventions
+## 7. Test-case conventions
 
-Target file: `.qua/conventions/test-case.md`.
+Saved as `.qua/conventions/test-case.md` by `qua_convention_write` with `name` `test-case`.
 
 - If `test_management` is `connected`: read existing cases (about 20) from the saved project and suite and derive the title shape, sections, preconditions, steps and expected results, type, priority and references.
 - Otherwise ask the user for one example test case.
 
-Use this shape, same rules as step 5 (`source=<provider>` of the test management tool, or `source=example`):
+Use this shape, same rules as step 6 (`source=<provider>` of the test management tool, or `source=example`):
 
 ```markdown
 <!-- qua:conventions source=<provider|example> generated=YYYY-MM-DD -->
@@ -181,9 +200,11 @@ Use this shape, same rules as step 5 (`source=<provider>` of the test management
 <type, priority, references and their usual values>
 ```
 
-Show the draft, then write only after an explicit yes.
+Show the draft, then save it with `qua_convention_write` (`name` `test-case`) only after an explicit yes.
 
-## 7. Suite stage tags
+## 8. Suite stage tags
+
+Optional, and the only step that writes a file. Skip it when you cannot edit files (a Qua app light chat): tell the user suites stay untagged and they can tag them later from a chat or editor that can write files, by adding `.qua/<suite>/suite.yaml` as below.
 
 List the suite directories in `.qua/` (directories holding case `*.md` files; skip `conventions` and `runs`). If there are any, offer to tag suites with the stages they apply to. For each suite the user agrees to, write `.qua/<suite>/suite.yaml`:
 
@@ -195,4 +216,4 @@ Use only stage keys saved in step 1. Suites without `suite.yaml` stay untagged. 
 
 ## Finish
 
-Call `qua_project_get()` and give a short summary: URL and stages, integration providers and statuses, conventions files written, suites tagged. Tell the user that `.qua/project.yaml`, `.qua/conventions/` and `suite.yaml` files should be committed.
+Call `qua_project_get()` and give a short summary: URL and stages, sources (with any missing folders), integration providers and statuses, conventions saved, suites tagged. Tell the user that `.qua/project.yaml`, `.qua/conventions/` and `suite.yaml` files should be committed.

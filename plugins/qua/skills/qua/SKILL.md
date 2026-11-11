@@ -13,6 +13,9 @@ call Qua MCP tools; qua finds the element and acts. You never touch the page.
 Configured browsers, stages and integrations come from the Qua MCP server
 instructions (a startup snapshot). Call `qua_project_get` for live state.
 Change project data only with `qua_project_set`; never edit `.qua/project.yaml`.
+`project.sources` lists the app's code folders and repos (`abs_path`, `exists`,
+note). You may read them; never put code, paths or notes into `qua_do`,
+`qua_case_write` or explore text.
 
 - Omit `browser` to use the default browser.
 - Pass `browser` only when the user explicitly asks for one, and only if the
@@ -29,8 +32,9 @@ Change project data only with `qua_project_set`; never edit `.qua/project.yaml`.
 
 - `qua_do(action, session, browser?, stage?, target?)` — perform one prose step.
 - `qua_run(suite, session, case?, browser?, stage?)` — run a saved case, or every case in a suite.
-- `qua_explore(session, start?, stage?, max_steps?, max_depth?, max_minutes?, origins?, allow_submit?, browser?)` — walk links, buttons and tabs within limits, grow the UI map, return a report; never `allow_submit` without the user's yes.
-- `qua_explore_status(session)` — progress of the session's running or last explore: steps, map growth, last lines.
+- `qua_explore(session, start?, stage?, max_steps?, max_depth?, max_minutes?, origins?, allow_submit?, browser?)` — start walking links, buttons and tabs within limits to grow the UI map; returns at once, the walk runs in the background. Never `allow_submit` without the user's yes.
+- `qua_explore_status(session, wait_s?)` — progress of the session's running or last explore: steps, map growth, last lines. Poll with `wait_s` 45 (waits for the end or new progress) until `running` is false, then `report` is the explore report.
+- `qua_explore_stop(session)` — stop the session's running explore; only when the user asks.
 - `qua_review_pick(session, timeout_s?)` — after a `review` step whose result says `review: shown in the window`, wait for the user's pick in the overlay; returns a `map_id` to pass as `target`.
 - `qua_review_view(session)` — widget for a shown review: the user picks a candidate in it. Call it only when the host renders widgets.
 - `qua_runs_view(id?, suite?)`, `qua_map_view(page?, fp?, tab?)`, `qua_cases_view(suite?, name?)` — widgets showing runs, the UI map and saved cases. Call them to show results when widgets render; the text tools stay the source of truth.
@@ -45,8 +49,9 @@ Change project data only with `qua_project_set`; never edit `.qua/project.yaml`.
 - `qua_session_logs(session, tail?, kind?)` — console, page errors, failed requests and Qua errors of a session window (`kind`: console, error, network, all).
 - `qua_session_screenshot(session, full_page?, label?)` — capture the session window now; returns the saved path (`.qua/screenshots/<session>/`) and the image. Cursor tabs need the Agents Window visible (not minimized).
 - `qua_session_close(session)` — only when the user asks to clean up.
-- `qua_project_get()` — read project data and whether it is configured.
-- `qua_project_set(app_url?, stages?, qua_env?, integrations?, other?)` — merge a patch into project data.
+- `qua_project_get()` — read project data and whether it is configured; `conventions` lists the bug-report and test-case conventions (`path`, `exists`, `text`).
+- `qua_project_set(app_url?, stages?, qua_env?, sources?, integrations?, other?)` — merge a patch into project data; `sources` (code folders and repos) replaces the whole list.
+- `qua_convention_write(name, text)` — save the `bug-report` or `test-case` conventions (`.qua/conventions/<name>.md`) after the user approves the shown draft.
 - `qua_project_configure(mcps?)` — project, browser and your MCP servers as text and a setup form; used by /qua-init.
 - `qua_mcp_list()` — MCP servers from project and user Qua config (ATE chats): source, status, secret refs only.
 - `qua_mcp_set(name, target, command?, args?, env?, url?, headers?, transport?, enabled?, remove?)` — add, edit or remove one server in the project or user config; secrets only as `${env:NAME}` or `${keychain:NAME}`; only when the user asks. Approval is the human's (ATE Approve or `qua mcp approve` in their terminal), never yours.
@@ -149,8 +154,8 @@ the step. If it says `note: screenshot not captured`, the step status still stan
 - Cursor only (`agent: cursor`): never call these Cursor browser tools: `browser_navigate`, `browser_tabs`, `browser_click`, `browser_type`, `browser_fill`, `browser_snapshot`, `browser_take_screenshot`.
 - Never inspect the DOM, pass selectors or page snapshots to qua.
 - Never edit `.qua/browser_sessions.json` or other files under `.qua/` except
-  through `qua_case_write` and the files a `/qua` command tells you to write
-  (`.qua/conventions/*.md`, `.qua/<suite>/suite.yaml`).
+  through `qua_case_write`, `qua_convention_write` and the files a `/qua` command
+  tells you to write (`.qua/<suite>/suite.yaml`).
 - Never ask for or store secrets; `qua login` is run by the user.
 - Never run the `qua` CLI during a normal turn; it is for humans.
 

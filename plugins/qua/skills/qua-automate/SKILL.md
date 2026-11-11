@@ -16,12 +16,13 @@ Write tests for Qua cases in this repo's own test framework. The text after the 
 - No secrets in code. A lock `value_ref` such as `secret:password`, and any `params` value `secret:<name>` of a `step:<id>` or `custom:<id>`, is a secret ref: never copy it literally; read it from the env var or fixture the project already uses for secrets.
 - Never edit `.qua/project.yaml` or other `.qua/` files: cases, locks, the map, `.qua/steps.yaml`, `.qua/actions.yaml`.
 - Never change a case or a lock to make a test pass.
+- Never put code, paths or source notes into `qua_do` or `qua_case_write`.
 
 ## Steps
 
 1. Pick cases: `qua_case_list(suite?)` for a suite or everything. For each case read `qua_case_get(suite, name)` and the lock `qua_case_resolved(suite, case)`.
    - No lock (`locked` false): the case never passed. Say so and suggest `qua_run` first; generate nothing for it unless the user asks for a skeleton of `TODO(qua)` lines.
-2. Read the target framework from the repo: runner and config, test layout, page objects or screens, locator style, helpers, fixtures, step definitions, how base URLs and secrets are configured, and the test command. If there is no test framework, offer `qua generate` (Playwright TS) instead and stop.
+2. Find the test code: this repo, or a source in `project.sources` whose note names the tests (for example "e2e tests (Playwright)"). A target outside the project root needs the user's yes before you write there; a `repo` without a local `path` cannot be written, say so. Read the target framework there: runner and config, test layout, page objects or screens, locator style, helpers, fixtures, step definitions, how base URLs and secrets are configured, and the test command. If there is no test framework, offer `qua generate` (Playwright TS) instead and stop.
 3. Get context for each locked step:
    - `page` and `state`: `qua_map_get(page?)` and `qua_map_state(fp)` for the page route, states and elements. The map may be missing (it is gitignored); then use the lock alone.
    - A Playwright reference for one case: run `qua generate --suite <suite> --case <name> --stdout` in a terminal. It writes nothing. Translate it; do not copy it into a non-Playwright repo.
