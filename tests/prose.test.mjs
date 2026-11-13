@@ -136,3 +136,12 @@ test('qua-explore follows the background walk with qua_explore_status', () => {
 test('qua-init file writes stay optional for light chats', () => {
   has('init suite tags', skills['qua-init'], ['Optional, and the only step that writes a file', 'Skip it when you cannot edit files'])
 })
+
+test('submit consent rules', () => {
+  has('qua-explore', skills['qua-explore'], [
+    'is not consent to submit', 'report them and stop', 'explicit yes for that control', 'the `challenge` from', '`consent_required`, ask the user; never invent consent',
+  ])
+  has('qua', skills.qua, ['`consent_required` — qua did not act', '`challenge`', '`qua_run`', 'Never rephrase or retry'])
+  for (const n of ['qua-validate', 'qua-record', 'qua-bug-report'])
+    has(n, skills[n], ['`consent_required`: ask the user; see the `qua` skill'])
+})

@@ -15,6 +15,7 @@ Turn what the user describes into a bug report that follows the project's conven
 - Never edit `.qua/project.yaml` and never handle secrets.
 - Save conventions only with `qua_convention_write(name, text)`, never by creating or editing `.qua/conventions/` files. If the user asks to create or change the conventions here, draft the whole file in the `/qua-init` shape (header line `<!-- qua:conventions source=<provider|example> generated=YYYY-MM-DD -->` and every heading), show it, and save it with `name` `bug-report` only after an explicit yes.
 - Never put code, paths or source notes into `qua_do` or `qua_case_write`.
+- `consent_required`: ask the user; see the `qua` skill.
 
 ## Steps
 

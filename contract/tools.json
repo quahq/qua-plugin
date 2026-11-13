@@ -11,6 +11,8 @@
         "session",
         "agent?",
         "browser?",
+        "challenge?",
+        "consent?",
         "endpoint?",
         "owner?",
         "stage?",
@@ -18,7 +20,7 @@
       ],
       "args_go": "op.DoInput",
       "result_go": "op.StepResult",
-      "result": "{status, reason, prose, action?, map_note?, sub?, candidates?, action_candidates?, review_shown?, screenshot?, screenshot_error?, notes?, resolved?}; text: the same as lines; candidates on review; resolved is never set by qua_do (see qua_run)",
+      "result": "{status, reason, prose, action?, map_note?, sub?, candidates?, action_candidates?, review_shown?, screenshot?, screenshot_error?, notes?, resolved?, challenge?}; text: the same as lines; candidates on review; resolved is never set by qua_do (see qua_run); a click, Enter or Space on a control a recent explore left to the user (needs_human or a skipped submit, while it runs and 10 min after) or on another button of its form, or Enter in that form (Ctrl/Cmd+Enter in a textarea), is not performed: status review, reason consent_required, a one-time challenge id and notes that say to ask the user; call again with consent (the user's own words) and that challenge; consent is written to the session log on that match and frees that control until its hold ends (quahq/qua-decisions#28)",
       "hints": {
         "readOnly": false,
         "destructive": true,
@@ -32,7 +34,7 @@
       ],
       "app": "chat agent calls qua_do",
       "skill": "qua; /qua-validate",
-      "decision": "Jev: action + target (/v1/resolve); code: pass/review gate",
+      "decision": "Jev: action + target (/v1/resolve); code: pass/review gate; human: consent for controls explore left to the user",
       "matrix_row": [
         "2.11",
         "3.1"
@@ -49,6 +51,8 @@
         "agent?",
         "browser?",
         "case?",
+        "challenge?",
+        "consent?",
         "endpoint?",
         "fresh?",
         "owner?",
@@ -56,7 +60,7 @@
       ],
       "args_go": "op.RunInput",
       "result_go": "op.RunResult",
-      "result": "{session, status, cases:[{suite, case, status, steps, duration_ms, log?, error?, lock_note?}]}; steps are qua_do step results plus resolved: lock (from .qua/resolved, no /v1/resolve), fresh or relock (the lock entry failed, resolved again); text: per-case status, `resolved: lock|relock` per step; progress notifications per step",
+      "result": "{session, status, cases:[{suite, case, status, steps, duration_ms, log?, error?, lock_note?}]}; steps are qua_do step results plus resolved: lock (from .qua/resolved, no /v1/resolve), fresh or relock (the lock entry failed, resolved again); text: per-case status, `resolved: lock|relock` per step; progress notifications per step; cases written after a held explore started get qua_do's consent guard (review consent_required with challenge; rerun with consent and challenge)",
       "hints": {
         "readOnly": false,
         "destructive": true,
@@ -86,6 +90,8 @@
         "agent?",
         "allow_submit?",
         "browser?",
+        "challenge?",
+        "consent?",
         "endpoint?",
         "max_depth?",
         "max_minutes?",
@@ -97,7 +103,7 @@
       ],
       "args_go": "op.ExploreInput",
       "result_go": "op.ExploreStarted",
-      "result": "{id, session, running, started_at, follow, notes?}; starts the walk in the background and returns at once (hosts drop calls after ~60 s); max_minutes is capped at 30; follow with qua_explore_status {session, wait_s: 45} until running is false, its report is the outcome; qua_explore_stop or qua_session_close stops it; while it runs, a second explore and qua_do, qua_run and qua_record (except status) on that session are refused; `qua explore` (CLI) still blocks and prints the report",
+      "result": "{id, session, running, started_at, follow, notes?}; starts the walk in the background and returns at once (hosts drop calls after ~60 s); max_minutes is capped at 30; follow with qua_explore_status {session, wait_s: 45} until running is false, its report is the outcome; qua_explore_stop or qua_session_close stops it; while it runs, a second explore and qua_do, qua_run and qua_record (except status) on that session are refused; `qua explore` (CLI) still blocks and prints the report; allow_submit only after the user's explicit yes in chat to submitting forms on that stage (explore or fill forms is not a yes): the first allow_submit call is a tool error carrying a one-time challenge; call again with consent set to the user's words and that challenge (same session, stage and start; used up once the walk starts; expired after 10 min)",
       "hints": {
         "readOnly": false,
         "destructive": true,
@@ -111,7 +117,7 @@
       ],
       "app": "UI map Explore",
       "skill": "/qua-explore",
-      "decision": "Jev: classify, place, risk; code: submit and logout regex; human: allow_submit",
+      "decision": "Jev: classify, place, control per group; code: truth table, offline and submit-name floors, disabled skipped; human: allow_submit with consent (any undoable data change)",
       "matrix_row": [
         "4.3"
       ]
@@ -1480,7 +1486,7 @@
       ],
       "args_go": "op.ExploreStatusInput",
       "result_go": "op.ExploreStatus",
-      "result": "{id, session, running, started_at, ended_at?, steps, states_before, states_after, edges_before, edges_after, lines, stopped?, error?, report?:{stopped, steps, max_steps, pages:[], states, edges:[], destructive?, session_end?, needs_human?, submit?, external?, errors?, depth_cut?, last_state?, warnings?:[{from,action,target,to,why}]}}; id is new per explore, reset when it starts (matches qua_explore's id); lines are the last 50; after counts are live until ended_at; report is set once a walk ends without error or is stopped (stopped: stopped, partial report; warnings: edge check, ADR 0056); wait_s 0 to 50 (default 0) blocks until running is false or wait_s passes",
+      "result": "{id, session, running, started_at, ended_at?, steps, states_before, states_after, edges_before, edges_after, lines, stopped?, error?, report?:{stopped, steps, max_steps, pages:[], states, edges:[], destructive?, session_end?, needs_human?, submit?, external?, errors?, depth_cut?, last_state?, warnings?:[{from,action,target,to,why}]}}; skip entries are {name, on, why?, note?}; needs_human and submit entries carry note \"do not complete by hand; ask the user\" and qua_do will not click them without consent; id is new per explore, reset when it starts (matches qua_explore's id); lines are the last 50; after counts are live until ended_at; report is set once a walk ends without error or is stopped (stopped: stopped, partial report; warnings: edge check, ADR 0056); wait_s 0 to 50 (default 0) blocks until running is false or wait_s passes",
       "hints": {
         "readOnly": true,
         "destructive": false,
@@ -3274,7 +3280,7 @@
       "domain": "authoring",
       "capability": "Explore",
       "owner": "core",
-      "decision": "Jev: classification (`/v1/classify`); Jev: new screen or same page (`place`); Jev: destructive check (`risk`): ≥0.7 skip, ≥0.3 needs_human; code: submit-name regex; PR #52 logout regex; human: `allow_submit`",
+      "decision": "Jev: classification (`/v1/classify`); Jev: new screen or same page (`place`); Jev: `control` set once per control group (changes_data, undo_available, reaches_others, ends_session, submits_form, effect, does_anything); code: truth table (≥0.7 sure, 0.3–0.7 needs_human), logout and submit-name regex only offline; human: `allow_submit` covers any undoable data change",
       "reach": {
         "ate": "MCP App",
         "mcp_app": "wraps"

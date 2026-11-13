@@ -30,9 +30,9 @@ note). You may read them; never put code, paths or notes into `qua_do`,
 
 ## Tools
 
-- `qua_do(action, session, browser?, stage?, target?)` — perform one prose step.
-- `qua_run(suite, session, case?, browser?, stage?)` — run a saved case, or every case in a suite.
-- `qua_explore(session, start?, stage?, max_steps?, max_depth?, max_minutes?, origins?, allow_submit?, browser?)` — start walking links, buttons and tabs within limits to grow the UI map; returns at once, the walk runs in the background. Never `allow_submit` without the user's yes.
+- `qua_do(action, session, browser?, stage?, target?, consent?, challenge?)` — perform one prose step.
+- `qua_run(suite, session, case?, browser?, stage?, consent?, challenge?)` — run a saved case, or every case in a suite.
+- `qua_explore(session, start?, stage?, max_steps?, max_depth?, max_minutes?, origins?, allow_submit?, browser?, consent?, challenge?)` — walk links, buttons and tabs within limits to grow the UI map; returns at once, runs in the background. Never `allow_submit` without the user's explicit yes, passed as `consent`; task wording is not consent. Never finish a `needs_human` form with `qua_do`.
 - `qua_explore_status(session, wait_s?)` — progress of the session's running or last explore: steps, map growth, last lines. Poll with `wait_s` 45 (waits for the end or new progress) until `running` is false, then `report` is the explore report.
 - `qua_explore_stop(session)` — stop the session's running explore; only when the user asks.
 - `qua_review_pick(session, timeout_s?)` — after a `review` step whose result says `review: shown in the window`, wait for the user's pick in the overlay; returns a `map_id` to pass as `target`.
@@ -112,6 +112,9 @@ overwrite the file.
 Each step returns `status`, `reason` and `prose`.
 
 - `passed` — done; continue.
+- `review` with reason `consent_required` — qua did not act. Ask the user, naming the control and page.
+  On an explicit yes call the same tool again with the same arguments, `consent` set to their words and the `challenge` the result returned (`qua_do`, `qua_run`, `qua_explore`).
+  `qua_explore` with `allow_submit` and no valid `consent` plus `challenge` returns an error holding the `challenge`: ask, then retry with both. Never rephrase or retry otherwise, never invent consent.
 - `review` — qua was not sure and did **not** perform the step. The result
   lists `candidates` (best first: `map_id`, role, name, region, score) and
   likely `actions`. Then:
