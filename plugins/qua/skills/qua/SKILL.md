@@ -32,7 +32,7 @@ note). You may read them; never put code, paths or notes into `qua_do`,
 
 - `qua_do(action, session, browser?, stage?, target?)` — perform one prose step.
 - `qua_run(suite, session, case?, browser?, stage?)` — run a saved case, or every case in a suite.
-- `qua_explore(session, start?, stage?, max_steps?, max_depth?, max_minutes?, origins?, allow_submit?, browser?)` — start walking links, buttons and tabs within limits to grow the UI map; returns at once, the walk runs in the background. Never `allow_submit` without the user's yes.
+- `qua_explore(session, start?, stage?, max_steps?, max_depth?, max_minutes?, origins?, allow_submit?, browser?)` — start walking links, buttons and tabs within limits to grow the UI map; returns at once, the walk runs in the background. Never `allow_submit` without the user's explicit yes, passed as `consent`; task wording is not consent. Never finish a `needs_human` form with `qua_do`.
 - `qua_explore_status(session, wait_s?)` — progress of the session's running or last explore: steps, map growth, last lines. Poll with `wait_s` 45 (waits for the end or new progress) until `running` is false, then `report` is the explore report.
 - `qua_explore_stop(session)` — stop the session's running explore; only when the user asks.
 - `qua_review_pick(session, timeout_s?)` — after a `review` step whose result says `review: shown in the window`, wait for the user's pick in the overlay; returns a `map_id` to pass as `target`.
@@ -120,6 +120,7 @@ Each step returns `status`, `reason` and `prose`.
   2. Otherwise rephrase the step to name the element more precisely and
      retry once, or show the candidates to the user and ask which one.
   Never pick a candidate just because it has the highest score.
+  On reason `consent_required`, ask the user; never invent consent.
   3. If the result says `review: shown in the window`, call `qua_review_view`
      when the host renders widgets. In Cursor's Agents Window widgets do not
      render: ask the user whether they see one, else use the text flow. Never call

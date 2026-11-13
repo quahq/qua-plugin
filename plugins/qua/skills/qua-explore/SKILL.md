@@ -11,9 +11,10 @@ Walk the app's controls and grow the UI map. The text after the command is an op
 
 - If Qua tools are missing, stop and point the user to /qua-init.
 - Call `qua_project_get()` first. If `configured` is false, stop and tell the user to run `/qua-init`.
-- Never pass `allow_submit` on your own. Explore clicks only links, buttons and tabs and skips controls the worker rates as destructive. Submitting forms creates data in the app: ask the user first, name the stage, and pass `allow_submit` only after an explicit yes.
+- "Explore", "fill forms" or any task wording is not consent to submit. Never pass `allow_submit` on your own. Ask "Submit forms on <stage>? This creates data." and pass `allow_submit` only after an explicit yes, with `consent` set to the user's words.
+- After explore reports `needs_human` or skipped submits: report them and stop. Never complete them with `qua_do`, not even to "finish the job". On `consent_required`, ask the user; never invent consent.
 - Prefer a non-production stage. If the only target is production, say so and ask before starting.
-- Never click skipped or `needs_human` controls yourself to "finish the job". Never edit `.qua/project.yaml`.
+- Never edit `.qua/project.yaml`.
 - Source code (`project.sources` of `qua_project_get`) may be read for routes, to propose start pages and sections. Never put code, paths or source notes into `qua_do`, `qua_case_write` or explore arguments.
 
 ## Steps
@@ -26,4 +27,4 @@ Walk the app's controls and grow the UI map. The text after the command is an op
    - Pages and states found, and the main navigation edges in plain words; `qua_map_get(page?)` and `qua_map_state(fp)` read the map for details.
    - Skipped as destructive and `needs_human` controls, with the page each is on. Ask whether any should be explored by hand; do not act on them.
    - Form submits skipped for lack of `allow_submit`, external links, and errors.
-5. Offer, but do not do, the next steps: raise the limits or explore a section deeper, rerun with `allow_submit` after a yes, or save a found flow with `qua_case_write` (one prose action per step) after the user confirms the steps.
+5. Offer, but do not do, the next steps: raise the limits or explore a section deeper, rerun with `allow_submit` and `consent` after a yes, or save a found flow with `qua_case_write` (one prose action per step) after the user confirms the steps.
