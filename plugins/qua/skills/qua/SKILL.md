@@ -112,7 +112,9 @@ overwrite the file.
 Each step returns `status`, `reason` and `prose`.
 
 - `passed` — done; continue.
-- `review` with reason `consent_required` — qua did not act. Ask the user, naming the control and page. On an explicit yes call the same tool again with the same arguments, `consent` set to their words and the `challenge` the result returned (`qua_do`, `qua_run`, `qua_explore`). `qua_explore` with `allow_submit` and no valid `consent` plus `challenge` returns an error holding the `challenge`: ask, then retry with both. Never rephrase or retry otherwise, never invent consent.
+- `review` with reason `consent_required` — qua did not act. Ask the user, naming the control and page.
+  On an explicit yes call the same tool again with the same arguments, `consent` set to their words and the `challenge` the result returned (`qua_do`, `qua_run`, `qua_explore`).
+  `qua_explore` with `allow_submit` and no valid `consent` plus `challenge` returns an error holding the `challenge`: ask, then retry with both. Never rephrase or retry otherwise, never invent consent.
 - `review` — qua was not sure and did **not** perform the step. The result
   lists `candidates` (best first: `map_id`, role, name, region, score) and
   likely `actions`. Then:
