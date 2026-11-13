@@ -1,6 +1,6 @@
 ---
 name: qua-bug-report
-description: Draft a bug report in the project's conventions and create it in the issue tracker after the user approves. Use when the user wants to file, log or write up a bug, or when /qua-bug-report is run.
+description: Draft a bug report in the project's conventions and create it in the issue tracker after the user approves. Use when the user wants to file, log, create or write up a bug ("заведи баг", "создай баг", "file a bug", "log a bug", "create a bug"), or when /qua-bug-report is run.
 ---
 
 # /qua-bug-report
@@ -11,7 +11,7 @@ Turn what the user describes into a bug report that follows the project's conven
 
 - If Qua tools are missing, stop and point the user to /qua-init.
 - Call `qua_project_get()` first. If `configured` is false, stop and tell the user to run `/qua-init`.
-- Never write to the issue tracker before an explicit yes to the full draft shown in chat.
+- Never write to the issue tracker before an explicit yes to the full draft shown in chat. A request to file or create a bug is not that yes: it means draft the report. The yes must come after the draft is printed.
 - Never edit `.qua/project.yaml` and never handle secrets.
 - Save conventions only with `qua_convention_write(name, text)`, never by creating or editing `.qua/conventions/` files. If the user asks to create or change the conventions here, draft the whole file in the `/qua-init` shape (header line `<!-- qua:conventions source=<provider|example> generated=YYYY-MM-DD -->` and every heading), show it, and save it with `name` `bug-report` only after an explicit yes.
 - Never put code, paths or source notes into `qua_do` or `qua_case_write`.
@@ -27,7 +27,7 @@ Turn what the user describes into a bug report that follows the project's conven
 4. Draft the bug exactly as the conventions describe: summary shape, description template, fields, labels, components and priority from the ladder. Use the tracker project key from project data.
    - Source code (`project.sources`): add a suspected-area line with file paths only when the user asks for it or the conventions have such a field. Never add code otherwise.
 5. Print the full draft: summary, description, and every field value.
-6. Ask: "Create this in the issue tracker?" Wait for the answer.
+6. Ask: "Create this in the issue tracker?" Wait for the answer. Only a reply after the printed draft counts; the original request to file or create the bug does not.
    - Yes: create the issue through the issue tracker tools you have (the saved `provider`), then print the issue key and URL.
    - Changes requested: redraft and ask again.
    - No: stop. Create nothing.
