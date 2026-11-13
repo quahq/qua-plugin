@@ -9,6 +9,7 @@ Record the user's manual actions in a session window. The text after the command
 
 ## Rules
 
+- `consent_required`: ask the user; see the `qua` skill.
 - If Qua tools are missing, stop and point the user to /qua-init.
 - Call `qua_project_get()` first. If `configured` is false, stop and tell the user to run `/qua-init`.
 - Never act in the window yourself while the user is recording; the user drives.

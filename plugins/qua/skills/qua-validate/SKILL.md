@@ -15,6 +15,7 @@ Validate one ticket live. The text after the command is the ticket key or URL, f
 - The issue tracker is read-only. Never comment, transition or edit the ticket without a separate, explicit yes after the verdict.
 - Never edit `.qua/project.yaml` and never handle secrets.
 - Source code (`project.sources` of `qua_project_get`) may help find the route and the expected behaviour. The verdict rests on live evidence only; code findings go in a separate "Likely cause" line. Never put code, paths or source notes into `qua_do` or `qua_case_write`.
+- `consent_required`: ask the user; see the `qua` skill.
 
 ## Steps
 

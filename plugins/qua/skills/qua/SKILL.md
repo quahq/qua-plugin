@@ -112,6 +112,7 @@ overwrite the file.
 Each step returns `status`, `reason` and `prose`.
 
 - `passed` — done; continue.
+- `review` with reason `consent_required` — qua did not act. Ask the user, naming the control and page. On an explicit yes call `qua_do` again with the same action and session and `consent` set to their words, with the challenge id that `consent_required` returns. Never rephrase or retry, never invent consent.
 - `review` — qua was not sure and did **not** perform the step. The result
   lists `candidates` (best first: `map_id`, role, name, region, score) and
   likely `actions`. Then:
@@ -120,7 +121,6 @@ Each step returns `status`, `reason` and `prose`.
   2. Otherwise rephrase the step to name the element more precisely and
      retry once, or show the candidates to the user and ask which one.
   Never pick a candidate just because it has the highest score.
-  On reason `consent_required`, ask the user; never invent consent.
   3. If the result says `review: shown in the window`, call `qua_review_view`
      when the host renders widgets. In Cursor's Agents Window widgets do not
      render: ask the user whether they see one, else use the text flow. Never call
