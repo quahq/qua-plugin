@@ -11,8 +11,9 @@ Walk the app's controls and grow the UI map. The text after the command is an op
 
 - If Qua tools are missing, stop and point the user to /qua-init.
 - Call `qua_project_get()` first. If `configured` is false, stop and tell the user to run `/qua-init`.
-- "Explore", "fill forms" or any task wording is not consent to submit. Never pass `allow_submit` on your own. Ask "Submit forms on <stage>? This creates data." and pass `allow_submit` only after an explicit yes, with `consent` set to the user's words and the `challenge` from the error the first call returns.
-- After explore reports `needs_human` or skipped submits: report them and stop. Complete one only on the user's explicit yes for that control, via `qua_do` with `consent` set to their words and the `challenge` from `consent_required`; never on task wording, never to "finish the job". On `consent_required`, ask the user; never invent consent.
+- "Explore", "fill forms" or other general task wording is not consent to submit. An explicit instruction to submit or send ("fill in the form and send it") is: quote it as `consent`.
+- Otherwise never pass `allow_submit` on your own. Ask "Submit forms on <stage>? This creates data." and pass it only after an explicit yes, with `consent` set to the user's words and the `challenge` from the error the first call returns.
+- After explore reports `needs_human` or skipped submits: report them and stop. Complete one only on the user's explicit yes for that control, via `qua_do` with `consent` set to their words and the `challenge` from `consent_required`; never on general task wording, never to "finish the job". On `consent_required`, ask the user; never invent consent.
 - Prefer a non-production stage. If the only target is production, say so and ask before starting.
 - Never edit `.qua/project.yaml`.
 - Source code (`project.sources` of `qua_project_get`) may be read for routes, to propose start pages and sections. Never put code, paths or source notes into `qua_do`, `qua_case_write` or explore arguments.

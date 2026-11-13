@@ -139,7 +139,7 @@ test('qua-init file writes stay optional for light chats', () => {
 
 test('submit consent rules', () => {
   has('qua-explore', skills['qua-explore'], [
-    'is not consent to submit', 'report them and stop', 'explicit yes for that control', 'the `challenge` from', '`consent_required`, ask the user; never invent consent',
+    'is not consent to submit', 'explicit instruction to submit or send', 'report them and stop', 'explicit yes for that control', 'the `challenge` from', '`consent_required`, ask the user; never invent consent',
   ])
   has('qua', skills.qua, ['`consent_required` — qua did not act', '`challenge`', '`qua_run`', 'Never rephrase or retry'])
   for (const n of ['qua-validate', 'qua-record', 'qua-bug-report'])
