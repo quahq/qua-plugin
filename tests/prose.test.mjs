@@ -39,6 +39,11 @@ test('qua skill is static', () => {
   has('qua bridge guidance', body, ['Cursor only (`agent: cursor`)', '`qua patch`'])
 })
 
+test('skipped controls need consent, not plain qua_do', () => {
+  has('qua', skills.qua, ['no plain `qua_do`', 'quote it as `consent`', 'ask first'])
+  has('qua-explore', skills['qua-explore'], ['destructive, reaches others, held', 'a plain `qua_do` click is never the path'])
+})
+
 test('frontmatter, title and project rules in every skill', () => {
   for (const [name, body] of Object.entries(skills)) {
     const fm = frontmatter(body)
