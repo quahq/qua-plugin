@@ -117,7 +117,7 @@
       ],
       "app": "UI map Explore",
       "skill": "/qua-explore",
-      "decision": "Jev: classify, place, control per group; code: truth table, offline and submit-name floors, disabled skipped; human: allow_submit with consent (any undoable data change)",
+      "decision": "Jev: classify, place, control per group; code: truth table, offline and submit-name floors, disabled skipped; human: allow_submit with consent (any undoable data change; with pays_or_deletes ≤ 0.3 also form submits that reach others or cannot be undone; pays_or_deletes \u003e 0.3 holds; never session end)",
       "matrix_row": [
         "4.3"
       ]
@@ -3280,7 +3280,7 @@
       "domain": "authoring",
       "capability": "Explore",
       "owner": "core",
-      "decision": "Jev: classification (`/v1/classify`); Jev: new screen or same page (`place`); Jev: `control` set once per control group (changes_data, undo_available, reaches_others, ends_session, submits_form, effect, does_anything); code: truth table (≥0.7 sure, 0.3–0.7 needs_human), logout and submit-name regex only offline; human: `allow_submit` covers any undoable data change",
+      "decision": "Jev: classification (`/v1/classify`); Jev: new screen or same page (`place`); Jev: `control` set once per control group (changes_data, undo_available, reaches_others, ends_session, submits_form, pays_or_deletes, effect, does_anything); code: truth table (≥0.7 sure, 0.3–0.7 needs_human), logout and submit-name regex only offline; human: `allow_submit` covers any undoable data change; ADR 0058 amendment: unsure reaches_others on effect navigates is walked, on a consented walk pays_or_deletes ≤ 0.3 lifts a sure form submit's reaches_others and no-undo holds, \u003e 0.3 holds a sure submit or change (≥ 0.7 never), missing keeps the old table and re-asks cached ones, a judged sign-in submit whose fields all have `{{env.NAME}}` values is sent without `allow_submit`",
       "reach": {
         "ate": "MCP App",
         "mcp_app": "wraps"
