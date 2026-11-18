@@ -40,8 +40,8 @@ test('qua skill is static', () => {
 })
 
 test('skipped controls need consent, not plain qua_do', () => {
-  has('qua', skills.qua, ['no plain `qua_do`', 'quote it as `consent`', 'ask first'])
-  has('qua-explore', skills['qua-explore'], ['destructive, reaches others, held', 'a plain `qua_do` click is never the path'])
+  has('qua', skills.qua, ['Never click one with a plain `qua_do`', 'only for submitting the form the user named', 'separate yes that names the control', 'one click', 'ask the user, call with `consent`, then call with the returned `challenge`'])
+  has('qua-explore', skills['qua-explore'], ['reaches-others and `submit` entries', 'a plain `qua_do` click is never the path', 'one consent covers one click'])
 })
 
 test('frontmatter, title and project rules in every skill', () => {
