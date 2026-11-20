@@ -28,6 +28,7 @@ import {
   type Draft,
   WRITE,
 } from './model.ts'
+import { registerGuard, startGuard } from './guard.ts'
 
 const SESSIONS = 'qua-sessions'
 const RUN = 'qua-run'
@@ -300,6 +301,7 @@ function rowOf(s: Session, now: number): string {
 }
 
 export const register: Register = on => {
+  registerGuard(on)
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'qua-ui',
@@ -308,6 +310,7 @@ export const register: Register = on => {
       immediate: true,
     })
     await $.command.register({ name: 'qua-config', description: 'Edit the Qua project config in a pane', immediate: true })
+    await startGuard($)
     $.clock.every(POLL_MS, async () => {
       const open = await $.ui.panes()
       if (autoPoll && open.some(p => p.id === SESSIONS)) await refreshSessions($)

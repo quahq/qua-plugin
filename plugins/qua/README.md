@@ -30,6 +30,15 @@ The mod calls `plugin:qua:qua`, then `qua`; `QUA_UI_SERVER` overrides. `$.mcp.ca
 
 Leave `qua_project_set` on ask. `/qua-ui probe` shows which server answers.
 
+## qua-guard (PoC, off by default)
+
+Opt-in guard that keeps the agent's browser work on the app under test on Qua tools (quahq/qua-decisions#22). Playwright inside Qua is unaffected.
+
+- Switch: `/qua-guard on|off|status` (per project folder, kept in the plugin store; only a person's prompt switches it), or `QUA_GUARD=1`/`0` in the environment or the `env` block of `~/.claude/settings.json`, which wins.
+- Denies, in the main loop and in subagents: `mcp__Claude_Browser__*`, `mcp__claude-in-chrome__*`, any MCP server whose name contains `playwright`; Bash that runs `curl`, `wget`, `open`, `node`, `npx`, `python` and the like against the project's `app_url` or stages (from `qua_project_get`; loopback hosts when unknown); `playwright open|codegen|screenshot|…`; `WebFetch` to those hosts; other plugins' `$.mcp.call` to a browser server.
+- The deny tells the model to use `qua_do`, `qua_run` or `qua_explore`. `qua_*` tools and the `qua` CLI keep working.
+- Best effort: Bash is matched by text, so a variable, a script file or an encoded command gets through.
+
 ### Develop
 
 ```sh
