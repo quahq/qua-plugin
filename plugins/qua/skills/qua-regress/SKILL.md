@@ -28,5 +28,6 @@ Run saved suites and summarize. The text after the command is an optional stage 
    - For each `failed` case also call `qua_session_logs` with `kind` error and `tail` 20 and add the one or two most relevant lines next to the step and reason.
    - For each `review` case: the step and its `candidates` (`map_id`, role, name). Do not pick a candidate yourself.
    - The log paths under `.qua/runs/` when the results give them. For a step's Jev judgments call `qua_run_get(id)` with an id from `qua_run_list(suite)`.
-   - Totals: passed, failed, review.
+   - A `review` with reason `consent_required` stops the suite: later cases do not start, and their names appear only in the step note "not run yet, continued after this case: ...". Show the stop and list the not-run cases; do not count them as passed. Ask the user before resuming with consent.
+   - Totals: passed, failed, review, plus not run when a suite stopped; say the totals are incomplete.
 5. When the host renders widgets, show the runs with `qua_runs_view(suite?)`. In Cursor's Agents Window ask whether the user sees a widget; if not, keep the text summary. Never call `qua_review_answer` or `qua_shot_get`.

@@ -33,6 +33,12 @@ note). You may read them; never put code, paths or notes into `qua_do`,
 - `qua_do(action, session, browser?, stage?, target?, consent?, challenge?)` — perform one prose step.
 - `qua_run(suite, session, case?, browser?, stage?, consent?, challenge?)` — run a saved case, or every case in a suite.
 - `qua_explore(session, start?, stage?, max_steps?, max_depth?, max_minutes?, origins?, allow_submit?, browser?, consent?, challenge?)` — grow the UI map by walking links, buttons and tabs; runs in the background. `allow_submit` only on the user's explicit yes or instruction to submit, passed as `consent`; general task wording is not consent. Never finish a `needs_human` form with `qua_do`.
+  Explore reports skipped `needs_human`, destructive (pays or deletes), reaches-others (affects other people) and `submit` entries.
+  Never click one with a plain `qua_do`. A task instruction ("fill in the form and send it") is consent only for submitting the form the user named: quote it as `consent`.
+  Pay, delete and reaches-others controls need a separate yes that names the control. One consent covers one click of a destructive or reaches-others control. Any control qua asks about again needs a new yes, and an old consent text is never reused.
+  If the user only asked to explore, ask first. An entry without a "do not complete by hand" note is not blocked by qua: still ask the user, never act on your own.
+  Order on `consent_required`: ask the user, then call again with the same `consent` and the returned `challenge`. After a consent `qua_run` continues from the held step: do not replay the case yourself.
+  If `qua_run` returns that it cannot continue (session closed, page moved, case changed, including after a long wait: more than 10 minutes since `consent_required` means the pause may have expired, so warn the user), tell the user which steps will run again, including holds consented earlier, and ask before a new run in a new session without the old challenge (the held step will ask again).
 - `qua_explore_status(session, wait_s?)` — progress of the session's running or last explore: steps, map growth, last lines. Poll with `wait_s` 45 (waits for the end or new progress) until `running` is false, then `report` is the explore report.
 - `qua_explore_stop(session)` — stop the session's running explore; only when the user asks.
 - `qua_review_pick(session, timeout_s?)` — after a `review` step whose result says `review: shown in the window`, wait for the user's pick in the overlay; returns a `map_id` to pass as `target`.

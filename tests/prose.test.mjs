@@ -39,6 +39,15 @@ test('qua skill is static', () => {
   has('qua bridge guidance', body, ['Cursor only (`agent: cursor`)', '`qua patch`'])
 })
 
+test('skipped controls need consent, not plain qua_do', () => {
+  has('qua', skills.qua, ['Never click one with a plain `qua_do`', 'only for submitting the form the user named', 'separate yes that names the control', 'one click', 'call again with the same `consent` and the returned `challenge`', '(affects other people)', 'needs a new yes, and an old consent text is never reused', 'tell the user which steps will run again', 'continues from the held step', 'more than 10 minutes since `consent_required`', 'without the old challenge (the held step will ask again)'])
+  has('qua-explore', skills['qua-explore'], ['reaches-others and `submit` entries', 'a plain `qua_do` click is never the path', 'one consent covers one click', 'needs a new yes, and an old consent text is never reused', 'tell the user which steps will run again', 'continues from the held step', 'more than 10 minutes since `consent_required`', 'without the old challenge (the held step will ask again)'])
+})
+
+test('regress shows consent stop and not-run cases', () => {
+  has('qua-regress', skills['qua-regress'], ['not run yet, continued after this case', 'list the not-run cases', 'Ask the user before resuming with consent', 'totals are incomplete'])
+})
+
 test('frontmatter, title and project rules in every skill', () => {
   for (const [name, body] of Object.entries(skills)) {
     const fm = frontmatter(body)
