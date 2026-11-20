@@ -40,8 +40,8 @@ test('qua skill is static', () => {
 })
 
 test('skipped controls need consent, not plain qua_do', () => {
-  has('qua', skills.qua, ['Never click one with a plain `qua_do`', 'only for submitting the form the user named', 'separate yes that names the control', 'one click', 'call again with the same `consent` and the returned `challenge`', '(affects other people)', 'needs a new yes, and an old consent text is never reused', 'tell the user which steps will run again', 'continues from the held step', 'more than 10 minutes since `consent_required`'])
-  has('qua-explore', skills['qua-explore'], ['reaches-others and `submit` entries', 'a plain `qua_do` click is never the path', 'one consent covers one click', 'needs a new yes, and an old consent text is never reused', 'tell the user which steps will run again', 'continues from the held step', 'more than 10 minutes since `consent_required`'])
+  has('qua', skills.qua, ['Never click one with a plain `qua_do`', 'only for submitting the form the user named', 'separate yes that names the control', 'one click', 'call again with the same `consent` and the returned `challenge`', '(affects other people)', 'needs a new yes, and an old consent text is never reused', 'tell the user which steps will run again', 'continues from the held step', 'more than 10 minutes since `consent_required`', 'without the old challenge (the held step will ask again)'])
+  has('qua-explore', skills['qua-explore'], ['reaches-others and `submit` entries', 'a plain `qua_do` click is never the path', 'one consent covers one click', 'needs a new yes, and an old consent text is never reused', 'tell the user which steps will run again', 'continues from the held step', 'more than 10 minutes since `consent_required`', 'without the old challenge (the held step will ask again)'])
 })
 
 test('regress shows consent stop and not-run cases', () => {
